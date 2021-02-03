@@ -48,7 +48,7 @@ pools:
       type: Event
       actions:
         - type: RunScafiProgram
-          parameters: [it.unibo.casestudy.HelloWorld, 5.0] # second argument is retention time
+          parameters: [it.unibo.simulations.HelloWorld, 5.0] # second argument is retention time
     - program: send
   - pool: &move
     - time-distribution: *moveFrequency

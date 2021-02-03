@@ -1,6 +1,5 @@
-package it.unibo.casestudy
+package it.unibo.simulations
 
-import it.unibo.alchemist.model.implementations.molecules.SimpleMolecule
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 
 import scala.concurrent.duration.FiniteDuration
