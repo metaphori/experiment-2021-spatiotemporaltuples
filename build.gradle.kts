@@ -32,10 +32,12 @@ dependencies {
     implementation(alchemist())
     implementation(alchemist("incarnation-scafi"))
     implementation(alchemist("swingui"))
-    implementation ("org.danilopianini:thread-inheritable-resource-loader:0.3.5")
+    implementation ("org.danilopianini:thread-inheritable-resource-loader:0.3.5") // for custom RunScafiProgram
 
     implementation("org.scala-lang:scala-library:%scala-version%")
     implementation("it.unibo.scafi:scafi-core_2.13:_")
+
+    implementation("org.scalactic:scalactic_2.13:_")
 
     /*
     implementation("com.github.cb372:scalacache-guava_2.12:0.9.3")
@@ -168,5 +170,7 @@ fun makeTest(
 }
 
 makeTest(name="hello", file = "hello_scafi", time = 100.0, vars = setOf("random"), taskSize = 2800)
+makeTest(name="procs", file = "test_aggregate_processes", time = 120.0, vars = setOf("random"), taskSize = 1500)
+
 
 // defaultTasks("fatJar")

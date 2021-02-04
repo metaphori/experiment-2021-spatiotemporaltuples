@@ -26,6 +26,7 @@ from textwrap import wrap
 #import copy  # copy.deepcopy(myDict)
 #import fnmatch # for fnmatch.fnmatch(str,glob)
 from functools import reduce
+import pdb
 
 #################################################################################
 ############################## Script functions #################################
@@ -145,6 +146,7 @@ def plot(config,content):
     plt.ylabel(y_labels[nf] if len(y_labels)>nf else "")
     maxy = float("-inf")
     for k in range(1,len(pformat)): # skip x-axis which is at pos 0
+      #pdb.set_trace()
       plt.plot(content[pformat[0]], content[pformat[k]], color=the_plots_colors[nf][pformat[k]], label=the_plots_labels[pformat[k]], linewidth=line_widths[nf][k])
       maxy = max(maxy, np.nanmax(content[pformat[k]]))
     maxy = min(maxy+10, limitPlotY[nf])

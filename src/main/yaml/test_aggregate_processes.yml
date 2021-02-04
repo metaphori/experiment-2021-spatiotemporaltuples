@@ -1,0 +1,86 @@
+variables:
+  random: &random
+    min: 0
+    max: 49
+    step: 1
+    default: 2
+  range: &range
+    formula: 100
+    language: js
+  moveFrequency: &moveFrequency
+    formula: 1/20
+    language: js
+  procs: &procs
+    language: scala
+    formula: "Map(0 -> (0,50), 30 -> (390,50), 25 -> (190, 35))"
+
+export:
+  - time
+  - molecule: numPids
+    aggregators: [sum]
+    value-filter: onlyfinite
+
+seeds:
+  scenario: *random
+  simulation: *random
+
+incarnation: scafi
+
+#ReproduceGPSTrace: &ReproduceGPSTrace
+#  type: ReproduceGPSTrace
+#  parameters: ["vcmuser.gpx", false, AlignToTime, 1365922800, false, false]
+
+environment:
+  #type: OSMEnvironment
+  #parameters: ["vcm.pbf", false]
+  type: Continuous2DEnvironment
+  parameters: []
+
+network-model:
+  type: ConnectWithinDistance #*connectionType
+  parameters: [*range]
+
+pools:
+  - pool: &program
+    - time-distribution:
+        type: ExponentialTime
+        parameters: [1]
+      type: Event
+      actions:
+        - type: RunScafiProgram
+          parameters: [it.unibo.casestudy.TestAggregateProcesses, 5.0] # second argument is retention time
+    - program: send
+  #- pool: &move
+  #  - time-distribution: *moveFrequency
+  #    type: Event
+  #    actions:
+  #    - *ReproduceGPSTrace
+  - pool: &move
+      - time-distribution: 1
+        type: Event
+        actions:
+          - type: MoveToTarget
+            parameters: [target, 50]
+displacements:
+- in:
+    type: Grid
+    parameters: [0, 0, 1000, 1000, 50, 50, 5, 5]
+    #type: Rectangle #GeometricGradientRectangle
+    #parameters: [ 200, 0, 0, 1000, 1000 ]
+    #type: FromGPSTrace
+    #parameters: [1497, "vcmuser.gpx", false, AlignToTime, 1365922800, false, false]
+  programs:
+  - *move
+  - *program
+  contents:
+  - molecule: test
+    concentration: true
+  - molecule: g
+    concentration: Double.PositiveInfinity
+  - molecule: procs
+    concentration: *procs
+  - molecule: numPids
+    concentration: 0
+#- in:
+#    type: Grid
+#    parameters: [0, 0, 200, 80, 10, 10, 1, 1]

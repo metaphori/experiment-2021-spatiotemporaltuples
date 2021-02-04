@@ -16,4 +16,4 @@ buildscript {
 //bootstrapRefreshVersions()
 bootstrapRefreshVersions(justAdditionalAliases)
 
-rootProject.name = "scafi-alchemist-skeleton"
+rootProject.name = "experiment21-spatiotemporaltuples"
