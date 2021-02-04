@@ -7,6 +7,7 @@
  */
 package it.unibo.alchemist.model.implementations.actions
 
+import java.lang.reflect.Constructor
 import java.util.concurrent.TimeUnit
 
 import it.unibo.alchemist.model.implementations.molecules.SimpleMolecule
@@ -39,6 +40,11 @@ sealed class DefaultRunScafiProgram[P <: Position[P]](
   }
 }
 
+object ScaFiProgram {
+  private val m = scala.collection.mutable.Map[String,Constructor[_]]()
+  def getConstructor(programName: String) = m.getOrElseUpdate(programName, ResourceLoader.classForName(programName).getDeclaredConstructor())
+}
+
 sealed class RunScafiProgram[T, P <: Position[P]] (
     environment: Environment[T, P],
     node: Node[T],
@@ -57,7 +63,7 @@ sealed class RunScafiProgram[T, P <: Position[P]] (
   }
 
   import RunScafiProgram.NBRData
-  val program = ResourceLoader.classForName(programName).getDeclaredConstructor().newInstance().asInstanceOf[CONTEXT => EXPORT]
+  val program = ScaFiProgram.getConstructor(programName).newInstance().asInstanceOf[CONTEXT => EXPORT]
   val programNameMolecule = new SimpleMolecule(programName)
   lazy val nodeManager = new SimpleNodeManager(node)
   private var nbrData: Map[ID, NBRData[P]] = Map()

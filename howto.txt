@@ -1,0 +1,4 @@
+# Launch simulations using the appropriate Gradle task
+$ ./gradlew tuples
+# Plot them
+$ ./plotter.py plots/spatialtuples.yml data 20210204-tuples.* tuples

@@ -128,7 +128,12 @@ def merge_samples(contents, configs):
     #    curstats = stats.get(expdim, np.zeros(len(curdata)))
     #    stats[expdim] = curstats + curdata
     #print(stats)
-    
+
+    # Crop the matrices so that they have the same shape (i.e., the minimum shape of all the involved matrices)
+    s = reduce(lambda s,m: min(s,m), [m.shape for m in matrices]) # uniform shape
+    matrices = [m[:s[0], :s[1]] for m in matrices]
+    time = time[:s[1]]
+    # Merge the matrices
     merged = reduce(lambda a,b: a+b, matrices)
     merged = list(map(lambda x: x/nsamples, merged))
     merged.insert(0,time) # reinserts time

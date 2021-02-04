@@ -38,6 +38,9 @@ dependencies {
     implementation("it.unibo.scafi:scafi-core_2.13:_")
 
     implementation("org.scalactic:scalactic_2.13:_")
+    implementation("org.apache.commons:commons-lang3:_")
+
+    implementation("it.unibo.alice.tuprolog:2p-core:_") // must be placed before alchemist to avoid an ANTLR issue
 
     /*
     implementation("com.github.cb372:scalacache-guava_2.12:0.9.3")
@@ -140,6 +143,7 @@ fun makeTest(
     val today = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
 
     task<JavaExec>("$name") {
+        dependsOn("build")
         classpath = sourceSets["main"].runtimeClasspath
         classpath("src/main/protelis")
         main = "it.unibo.alchemist.Alchemist"
@@ -171,6 +175,7 @@ fun makeTest(
 
 makeTest(name="hello", file = "hello_scafi", time = 100.0, vars = setOf("random"), taskSize = 2800)
 makeTest(name="procs", file = "test_aggregate_processes", time = 120.0, vars = setOf("random"), taskSize = 1500)
+makeTest(name="tuples", file = "spatialtuples", time = 200.0, vars = setOf("random"), taskSize = 1500)
 
 
 // defaultTasks("fatJar")
