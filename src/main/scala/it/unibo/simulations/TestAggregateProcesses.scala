@@ -16,7 +16,8 @@ class TestAggregateProcesses extends AggregateProgram with StandardSensors with 
 
     val t = alchemistTimestamp.toDouble.toLong
     val procs = node.get[Map[Int,(Int,Int)]]("procs")
-    val pids: Set[Pid] = procs.filter(tgen => tgen._2._1 == mid() && (t - 5) < tgen._1).map(tgen => Pid()(terminateAt = tgen._2._2)).toSet
+    val pids: Set[Pid] = procs.filter(tgen => tgen._2._1 == mid() && t > tgen._1 && (t - 5) < tgen._1)
+      .map(tgen => Pid(time = tgen._1)(terminateAt = tgen._2._2)).toSet
 
     val maps = sspawn[Pid,Unit,Double](process, pids, {})
 
