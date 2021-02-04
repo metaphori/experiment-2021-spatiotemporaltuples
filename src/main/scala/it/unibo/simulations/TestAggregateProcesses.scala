@@ -1,10 +1,7 @@
-package it.unibo.casestudy
+package it.unibo.simulations
 
-import it.unibo.alchemist.model.interfaces.Position
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 import it.unibo.scafi.space.{Point2D, Point3D}
-import org.scalactic.TripleEquals._
-import org.scalactic.Tolerance._
 
 class TestAggregateProcesses extends AggregateProgram with StandardSensors with ScafiAlchemistSupport
   with CustomSpawn with Gradients {
@@ -18,9 +15,7 @@ class TestAggregateProcesses extends AggregateProgram with StandardSensors with 
 
     val t = alchemistTimestamp.toDouble.toLong
     val procs = node.get[Map[Int,(Int,Int)]]("procs")
-    val pids: Set[Pid] = if(procs.contains(t.toInt)){
-      if(procs(t.toInt)._1 == mid()) Set(Pid()(terminateAt=procs(t.toInt)._2)) else Set.empty
-    } else Set.empty
+    val pids: Set[Pid] = procs.filter(tgen => tgen._2._1 == mid() && (t - 5) < tgen._1).map(tgen => Pid()(terminateAt = tgen._2._2)).toSet
 
     val maps = sspawn[Pid,Unit,Double](process, pids, {})
 

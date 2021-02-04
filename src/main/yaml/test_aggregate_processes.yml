@@ -12,7 +12,7 @@ variables:
     language: js
   procs: &procs
     language: scala
-    formula: "Map(0 -> (0,50), 30 -> (390,50), 25 -> (190, 35))"
+    formula: "Map(0 -> (0,50), 30 -> (390,50), 25 -> (190, 35), 80 -> (380, 85))"
 
 export:
   - time
@@ -48,7 +48,7 @@ pools:
       type: Event
       actions:
         - type: RunScafiProgram
-          parameters: [it.unibo.casestudy.TestAggregateProcesses, 5.0] # second argument is retention time
+          parameters: [it.unibo.simulations.TestAggregateProcesses, 5.0] # second argument is retention time
     - program: send
   #- pool: &move
   #  - time-distribution: *moveFrequency
