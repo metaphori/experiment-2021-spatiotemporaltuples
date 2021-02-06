@@ -167,11 +167,16 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
           (if(chosenOutProcess.isEmpty) OutPhase.Normal else OutPhase.Serving(chosenOutProcess.get), Set.empty)
         }
         case thisPhase@OutPhase.Serving(inProc) => {
+          // TODO: fix the need for that delay
+          val notAliveIN = C[Double, Boolean](potential, _&&_, delay(!arg.keySet.contains(inProc), false, 5), true)
           // Wait ack from IN to actually close
           val ack = C[Double, Boolean](potential, _||_, inOwnerAck(toid, inProc, events), false)
           // Close when ack reaches the OUT owner
           val ackEvent: Set[TupleOpEvent] = if(owner && ack) Set(OUTAck(toid)) else Set.empty
-          (branch(owner && ack){ delay(OutPhase.Done, thisPhase) } { thisPhase }, Set(OUTReservedFor(toid, inProc))++ackEvent)
+          (branch[OutPhase](owner && ack){ delay(OutPhase.Done, thisPhase) } {
+            // If the IN is not alive anymore, back to normal phase
+            branch[OutPhase](owner && !notAliveIN){ thisPhase }{ OutPhase.Normal }
+          }, Set(OUTReservedFor(toid, inProc))++ackEvent)
         }
         case OutPhase.Done => {
           (OutPhase.Done, Set(OUTAck(toid), OUTDone(toid)))
