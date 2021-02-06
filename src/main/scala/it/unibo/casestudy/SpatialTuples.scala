@@ -212,7 +212,7 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
     val result  = C[Double,Set[Tuple]](g, _++_, tupleFound, Set.empty)
     val requesterGotResult = mid()==initiator && !result.isEmpty
     val chosenTuple: Option[Tuple] = branch(requesterGotResult){ keepUntil[Option[Tuple]](result.headOption, until = t => t.isEmpty) } { None }
-    if(chosenTuple.isDefined){ addTupleIfNotAlreadyThere((chosenTuple.get) }
+    if(chosenTuple.isDefined){ addTupleIfNotAlreadyThere(chosenTuple.get) }
     val status = if(chosenTuple.isDefined){ Terminated } else if(g < extension) { Output } else { External }
     (TupleOpResult(if(chosenTuple.isDefined) OperationStatus.completed else OperationStatus.inProgress, chosenTuple), status)
   }
