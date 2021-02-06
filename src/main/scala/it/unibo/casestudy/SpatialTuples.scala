@@ -21,9 +21,11 @@ object Molecules {
 object Effects {
   val OUT_PHASE = "out_phase"
   val IN_PHASE = "in_phase"
+  val IN_PHASE2 = "in_phase2"
   val DOING_OUT = "doing_out"
   val DOING_IN = "doing_in"
   val DOING_READ = "doing_read"
+  val INITIATOR = "initiator"
 }
 
 trait OutPhase {
@@ -65,6 +67,9 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
     node.put(Effects.DOING_OUT, false)
     node.put(Effects.DOING_READ, false)
     node.put(Effects.IN_PHASE, 0)
+    node.put(Effects.IN_PHASE2, 0)
+    node.put(Effects.OUT_PHASE, 0)
+    node.put(Effects.INITIATOR, false)
   }
 
   override def main(): Any = {
@@ -135,6 +140,7 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
 
   def outResultInRegion(toid: TupleOpId, s: Tuple, inRegion: Boolean, potential: Double, arg: ProcArg) = {
     node.put(Effects.DOING_OUT, true)
+    node.put(Effects.INITIATOR, toid.op.initiator == mid())
     val (events, terminate) = branch(inRegion){ handleRemovalByIN(toid, s, potential, arg) }{ (Set.empty, false) }
     (TupleOpResult(OperationStatus.completed, Some(s), events),
       if(terminate) Terminated else if(inRegion) Output else External)
@@ -142,10 +148,10 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
 
   def handleRemovalByIN(toid: TupleOpId, s: Tuple, potential: Double, arg: ProcArg): (Set[TupleOpEvent], Boolean) = {
     val owner = toid.op.initiator == toid.op.initiator
+    val events = arg.flatMap(_._2.events).toSet
 
-    val (newPhase,newEvents) = rep[(OutPhase,Set[TupleOpEvent])]((OutPhase.Normal, Set.empty)) { case (currPhase, events) => {
+    val (newPhase,newEvents) = rep[(OutPhase,Set[TupleOpEvent])]((OutPhase.Normal, Set.empty)) { case (currPhase, _) => {
       val phase: OutPhase = broadcastOn(potential, currPhase)
-      node.put(Effects.OUT_PHASE, phase.toNum)
 
       branchOn(phase) {
         case OutPhase.Normal => {
@@ -160,18 +166,21 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
           // Move to another phase if a choice has been made
           (if(chosenOutProcess.isEmpty) OutPhase.Normal else OutPhase.Serving(chosenOutProcess.get), Set.empty)
         }
-        case OutPhase.Serving(inProc) => {
+        case thisPhase@OutPhase.Serving(inProc) => {
           // Wait ack from IN to actually close
           val ack = C[Double, Boolean](potential, _||_, inOwnerAck(toid, inProc, events), false)
-          // Close when ack reaches the IN owner
-          (if(owner && ack){ OutPhase.Done } else { OutPhase.Serving(inProc) }, Set(OUTReservedFor(toid, inProc)))
+          // Close when ack reaches the OUT owner
+          val ackEvent: Set[TupleOpEvent] = if(owner && ack) Set(OUTAck(toid)) else Set.empty
+          (branch(owner && ack){ delay(OutPhase.Done, thisPhase) } { thisPhase }, Set(OUTReservedFor(toid, inProc))++ackEvent)
         }
         case OutPhase.Done => {
-          (OutPhase.Done, Set(OUTDone(toid)))
+          (OutPhase.Done, Set(OUTAck(toid), OUTDone(toid)))
         }
         case ph => throw new Exception(s"Invalid phase ${ph}")
       }
     }}
+
+    node.put(Effects.OUT_PHASE, newPhase.toNum)
 
     /*
     val result = TupleOpResult(
@@ -187,6 +196,7 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
 
   def ReadLogic(toid: TupleOpId, readOp: Read, arg: ProcArg): (TupleOpResult, Status) = {
     node.put(Effects.DOING_READ, true)
+    node.put(Effects.INITIATOR, toid.op.initiator == mid())
     val Read(tupleTemplate, initiator, extension) = readOp
     val g = classicGradient(initiator==mid())
     val tupleFound = solveFirst(tupleTemplate)
@@ -199,9 +209,10 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
 
   def InLogic(toid: TupleOpId, inOp: In, arg: ProcArg): (TupleOpResult, Status) = {
     node.put(Effects.DOING_IN, true)
+    node.put(Effects.INITIATOR, toid.op.initiator == mid())
     val In(ttemplate, initiator, extension) = inOp
     val owner = mid()==initiator
-    val events = arg.flatMap(_._2.events)
+    val events = arg.flatMap(_._2.events).toSet
     // Note: IN is not trivial: Need consensus on the tuple to remove (as there might be multiple OUTs);
     // As there might be multiple concurrent INs, these must be discriminated by a tuple's owner.
     // So, it needs 2 feedback loops for 4 flows of events:
@@ -211,9 +222,8 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
     // 4) TupleRemovalEnd
     val g = classicGradient(owner)
 
-    val (newPhase,newEvents) = rep[(InPhase,Set[TupleOpEvent])]((InPhase.Start, Set.empty)){ case (currPhase, events) => {
+    val (newPhase,newEvents) = rep[(InPhase,Set[TupleOpEvent])]((InPhase.Start, Set.empty)){ case (currPhase, _) => {
       val phase = broadcastOn(g, currPhase)
-      node.put(Effects.IN_PHASE, phase.toNum)
 
       branchOn(phase){
         case InPhase.Start => {
@@ -232,11 +242,11 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
         }
         case InPhase.Read(out) => {
           // Just let the owner read the tuple
-          if(trueOnFirstExecutionOnly() && mid() == owner){ addTuple(out.outTuple) }
+          if(trueOnFirstExecutionOnly() && owner){ addTuple(out.outTuple) }
           // Advertise the tuple that has been removed to everyone in the IN process
           val event = INRemovedTuple(toid, out)
           // Wait ack from OUT to actually close
-          val ack = C[Double, Boolean](g, _||_, outOwnerAck(out, events), false)
+          val ack = C[Double, Boolean](g, _||_, keepUntil[Boolean](outOwnerAck(out, events), until = v => !v), false)
           // Close when ack reaches the IN owner
           (if(owner && ack){ InPhase.Done(out.outTuple) } else { InPhase.Read(out) }, Set(event))
         }
@@ -245,6 +255,8 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
         }
       }
     }}
+
+    node.put(if(toid.issuedAtTime<28) Effects.IN_PHASE else Effects.IN_PHASE2, newPhase.toNum)
 
     val result = TupleOpResult(
       operationStatus = if(newPhase.isDone) OperationStatus.completed else OperationStatus.inProgress,
@@ -271,7 +283,7 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
     events
       .collect {  case OUTReservedFor(from, `toid`) => from}
       // Need to filter out OUT processes that already committed to other INs
-      .filter(potentialOut => events.collectFirst { case OUTReservedFor(`potentialOut`, inOp) if inOp != toid => () }.isEmpty )
+      .filter(potentialOut => events.exists { case OUTReservedFor(`potentialOut`, `toid`) => true; case _ => false })
 
   def outOwnerAck(outP: TupleOpId, events: Set[TupleOpEvent]): Boolean =
     events.collectFirst {
