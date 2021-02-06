@@ -79,6 +79,10 @@ trait TupleSpace {
     }
     result
   }
+
+  implicit class RichStrForTuple(s: String){
+    def toTerm(): Term = Term.createTerm(s)
+  }
 }
 
 case class TupleSolution(solution: String, bindings: Map[String,String]) {

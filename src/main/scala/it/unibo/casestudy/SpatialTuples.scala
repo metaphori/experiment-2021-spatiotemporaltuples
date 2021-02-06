@@ -55,7 +55,6 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
   import SpawnInterface._
 
   lazy val expDistibution = new ExponentialDistribution(alchemistRandomGen, 1.0)
-  var k = 0
 
   def T = alchemistTimestamp.toDouble.toLong
 
@@ -74,24 +73,8 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
 
   override def main(): Any = {
     initialiseEffects()
-    //initialiseLocalTupleSpace
 
-    k = rep(0)(_+1)
-
-    val (topleft, top, left, center, right, bottomleft) = (380, 390, 180, 190, 199, 0)
-    val procs = Map(0 ->  (bottomleft,   50, "out", "x(77)"),
-      30 -> (top, 50,  "in", "x(X)"),
-      25 -> (center, 35,  "in", "x(X)"),
-      50 -> (left, 100, "rd", "x(X)"),
-      50 -> (right, 1, "rd", "x(X)"),
-      20 -> (topleft, 85, "out", "x(88)")
-    ) //node.get[Map[Int,(Int,Int,String,String)]](Molecules.PROCS) // format T -> (ID, duration, "in"/"out", tuple)
-    val pids: Set[TupleOpId] = procs.filter { case (t, (src,duration,kind,tpl)) => src == mid() && T > t && (T - 5) < t }
-      .map{ case (t, (src,duration,kind,tpl)) => kind match {
-        case "out" => TupleOpId(s"${mid()}_${t}")(OutMe(tpl, src, 400), t)
-        case "in" => TupleOpId(s"${mid()}_${t}")(In(tpl, src, 400), t)
-        case "rd" => TupleOpId(s"${mid()}_${t}")(Read(tpl, src, 100), t)
-      }}.toSet
+    val pids: Set[TupleOpId] = basicScenario()
 
     // Spawn processes and get results
     val ops: Map[TupleOpId,TupleOpResult] = sspawn[TupleOpId,Map[TupleOpId,TupleOpResult],TupleOpResult](tupleOperation _, pids, node.getOrElse("tuple_ops", Map.empty))
@@ -118,10 +101,31 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
       }
 
       val status = res._2
-      node.put(toid.uid + "_op", s"${toid.op}{$k}")
-      node.put(toid.uid + "_status", (if (status == Output) 2 else if (status == Bubble) 1 else if (status == Terminated) 3 else 0) + s" {$k}")
+      node.put(toid.uid + "_op", s"${toid.op}{$T}")
+      node.put(toid.uid + "_status", (if (status == Output) 2 else if (status == Bubble) 1 else if (status == Terminated) 3 else 0) + s" {$T}")
       res
     }
+  }
+
+  /**
+   * Basic scenario with 4 concurrent and overlapping operations: 2 OUTs and 2 INs
+   */
+  def basicScenario(): Set[TupleOpId] = {
+    val (topleft, top, left, center, right, bottomleft) = (380, 390, 180, 190, 199, 0)
+    val procs = Map(0 ->  (bottomleft,   50, "out", "x(77)"),
+      30 -> (top, 50,  "in", "x(X)"),
+      25 -> (center, 35,  "in", "x(X)"),
+      30 -> (left, 100, "rd", "x(X)"),
+      50 -> (right, 1, "rd", "x(X)"),
+      20 -> (topleft, 85, "out", "x(88)")
+    ) //node.get[Map[Int,(Int,Int,String,String)]](Molecules.PROCS) // format T -> (ID, duration, "in"/"out", tuple)
+    val pids: Set[TupleOpId] = procs.filter { case (t, (src,duration,kind,tpl)) => src == mid() && T > t && (T - 5) < t }
+      .map{ case (t, (src,duration,kind,tpl)) => kind match {
+        case "out" => TupleOpId(s"${mid()}_${t}")(OutMe(tpl, src, 400), t)
+        case "in" => TupleOpId(s"${mid()}_${t}")(In(tpl, src, 400), t)
+        case "rd" => TupleOpId(s"${mid()}_${t}")(Read(tpl, src, 100), t)
+      }}.toSet
+    pids
   }
 
   // TODO: make OUTs functions uniform
@@ -204,12 +208,13 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
     node.put(Effects.INITIATOR, toid.op.initiator == mid())
     val Read(tupleTemplate, initiator, extension) = readOp
     val g = classicGradient(initiator==mid())
-    val tupleFound = solveFirst(tupleTemplate)
-    val result  = gossip[Option[TupleSolution]](!tupleFound.isEmpty, tupleFound)
+    val tupleFound: Set[Tuple] = arg.keySet.filter(_.isOut).map(_.outTuple).filter(t => tupleSpace.unify(tupleTemplate.toTerm(), t.toTerm()))
+    val result  = C[Double,Set[Tuple]](g, _++_, tupleFound, Set.empty)
     val requesterGotResult = mid()==initiator && !result.isEmpty
-    if(requesterGotResult){ addTupleIfNotAlreadyThere(result.get.solution) }
-    val status = if(requesterGotResult){ Terminated } else if(g < extension) { Output } else { External }
-    (TupleOpResult(if(result.isDefined) OperationStatus.completed else OperationStatus.inProgress, result.map(_.solution)), status)
+    val chosenTuple: Option[Tuple] = branch(requesterGotResult){ keepUntil[Option[Tuple]](result.headOption, until = t => t.isEmpty) } { None }
+    if(chosenTuple.isDefined){ addTupleIfNotAlreadyThere((chosenTuple.get) }
+    val status = if(chosenTuple.isDefined){ Terminated } else if(g < extension) { Output } else { External }
+    (TupleOpResult(if(chosenTuple.isDefined) OperationStatus.completed else OperationStatus.inProgress, chosenTuple), status)
   }
 
   def InLogic(toid: TupleOpId, inOp: In, arg: ProcArg): (TupleOpResult, Status) = {
@@ -247,7 +252,7 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
         }
         case InPhase.Read(out) => {
           // Just let the owner read the tuple
-          if(trueOnFirstExecutionOnly() && owner){ addTuple(out.outTuple) }
+          if(trueOnFirstExecutionOnly() && owner){ addTupleIfNotAlreadyThere(out.outTuple) }
           // Advertise the tuple that has been removed to everyone in the IN process
           val event = INRemovedTuple(toid, out)
           // Wait ack from OUT to actually close
@@ -294,15 +299,4 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
     events.collectFirst {
       case OUTAck(`outP`) => true
     }.isDefined
-
-  var eventMaps: Map[TupleOpId,Set[String]] = Map.empty
-  def emitEvent(toid: TupleOpId, event: ProcessEvent): Unit = {
-    eventMaps += toid -> (eventMaps.getOrElse(toid,Set.empty) + event.toString)
-    addTupleIfNotAlreadyThere(event.toString)
-  }
-  def clearEvents(toid: TupleOpId): Unit = {
-    eventMaps.get(toid).foreach(t => t.foreach(removeTuple(_)))
-    eventMaps += toid -> Set.empty
-  }
-  def retractEvent(toid: TupleOpId, event: ProcessEvent): Unit = removeTuple(event.toString)
 }
