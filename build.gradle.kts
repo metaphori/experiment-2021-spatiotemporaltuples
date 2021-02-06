@@ -119,7 +119,8 @@ fun makeTest(
         maxHeap: Long? = null,
         taskSize: Int = 1024,
         threads: Int? = null,
-        debug: Boolean = false
+        debug: Boolean = false,
+        effects: String? = null
 ) {
     val heap: Long = maxHeap ?: if (System.getProperty("os.name").toLowerCase().contains("linux")) {
         ByteArrayOutputStream()
@@ -165,6 +166,9 @@ fun makeTest(
         if (vars.isNotEmpty()) {
             args("-b", "-var", *vars.toTypedArray())
         }
+        if(effects != null){
+            args("-g", effects)
+        }
     }
     /*tasks {
         "runTests" {
@@ -175,7 +179,8 @@ fun makeTest(
 
 makeTest(name="hello", file = "hello_scafi", time = 100.0, vars = setOf("random"), taskSize = 2800)
 makeTest(name="procs", file = "test_aggregate_processes", time = 120.0, vars = setOf("random"), taskSize = 1500)
-makeTest(name="tuples", file = "spatialtuples", time = 200.0, vars = setOf("random"), taskSize = 1500)
+makeTest(name="tuples", file = "spatialtuples", time = 100.0, vars = setOf("random"), taskSize = 1500)
+makeTest(name="st", file = "spatialtuples", time = 100.0, taskSize = 1500, effects="src/main/resources/spatialtuples.aes")
 
 
 // defaultTasks("fatJar")

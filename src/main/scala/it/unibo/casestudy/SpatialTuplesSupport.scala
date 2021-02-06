@@ -45,18 +45,39 @@ object SpatialTuplesSupport {
 
   case class TupleOpId(uid: String)(val op: TupleOp, val issuedAtTime: Double) {
     override def toString: Tuple = uid
+    lazy val isOut = op.isInstanceOf[OutMe] || op.isInstanceOf[OutHere] || op.isInstanceOf[OutInRegion]
+    lazy val isIn = op.isInstanceOf[In]
+    lazy val isRead = op.isInstanceOf[Read]
+    lazy val outTuple = if(isOut) {
+      op match {
+        case OutMe(t, _, _) => t
+        case OutHere(t, _, _, _) => t
+        case OutInRegion(t, _, _) => t
+      }
+    } else { throw new Exception("Not an OUT operation ") }
   }
 
   trait OperationStatus
-
   object OperationStatus {
-    val inProgress: OperationStatus = new OperationStatus {}
-    val completed: OperationStatus = new OperationStatus {}
+    val inProgress: OperationStatus = new OperationStatus { override def toString: Tuple = "IN_PROGRESS" }
+    val completed: OperationStatus = new OperationStatus { override def toString: Tuple = "COMPLETED" }
   }
 
-  case class OperationResult(operationStatus: OperationStatus, result: Option[Tuple])
+  trait TupleOpEvent
+  case class OUTReservedFor(outOp: TupleOpId, forOp: TupleOpId) extends TupleOpEvent
+  case class OUTAck(outOp: TupleOpId) extends TupleOpEvent
+  case class OUTDone(inOp: TupleOpId) extends TupleOpEvent
 
-  case class ProcArg(localTuples: Set[Tuple] = Set.empty, procs: Set[TupleOpId] = Set.empty)
+  case class INLookingFor(inOp: TupleOpId, ttemplate: TupleTemplate) extends TupleOpEvent
+  case class INRemovedTuple(inOp: TupleOpId, outOp: TupleOpId) extends TupleOpEvent
+  case class INDone(inOp: TupleOpId) extends TupleOpEvent
+
+  case class TupleOpResult(operationStatus: OperationStatus,
+                           result: Option[Tuple],
+                           events: Set[TupleOpEvent] = Set.empty)
+
+  //case class ProcArg(localTuples: Set[Tuple] = Set.empty, procs: Set[TupleOpId] = Set.empty)
+  type ProcArg = Map[TupleOpId, TupleOpResult]
 
   trait ProcessEvent
 
