@@ -2,3 +2,5 @@
 $ ./gradlew tuples
 # Plot them
 $ ./plotter.py plots/spatialtuples.yml data 20210204-tuples.* tuples
+# Put together the images for a better visualisation
+$ ./showImgs.sh data/imgs/ tuples_0_0 3 summary
