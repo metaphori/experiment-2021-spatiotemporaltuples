@@ -10,13 +10,23 @@ import org.scalactic.Tolerance._
 import org.scalactic.TripleEquals._
 
 object Exports {
+  val NUM_OUT_INITIATORS = "outs_devs_n"
+  val NUM_IN_INITIATORS = "ins_devs_n"
   val NUM_OUTS = "outs_n"
   val NUM_INS = "ins_n"
   val NUM_OUTS_CLOSED = "outs_closed_n"
   val NUM_INS_CLOSED = "ins_unblocked_n"
+  val RUNNING_PROCESSES = "running_processes"
 }
 object Molecules {
+  val MAX_EXTENSION: String = "maxExtension"
   val PROCS = "procs"
+  val OUT_WINDOW = "outWindow"
+  val OUT_EXP_THRES = "outExpThreshold"
+  val IN_WINDOW = "inWindow"
+  val IN_EXP_THRES = "inExpThreshold"
+  val OUTS_CLOSED = "closed_outs"
+  val INS_CLOSED = "closed_ins"
 }
 object Effects {
   val OUT_PHASE = "out_phase"
@@ -61,6 +71,17 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
   var opsStarted: Set[TupleOpId] = Set.empty
   var opsClosed: Set[TupleOpId] = Set.empty
 
+  def initialise() = {
+    initialiseExports()
+    initialiseEffects()
+  }
+
+  def initialiseExports() = {
+    node.put(Exports.RUNNING_PROCESSES, 0)
+    node.put(Exports.NUM_IN_INITIATORS, 0)
+    node.put(Exports.NUM_OUT_INITIATORS, 0)
+  }
+
   def initialiseEffects() = {
     node.put(Effects.DOING_IN, false)
     node.put(Effects.DOING_OUT, false)
@@ -72,25 +93,27 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
   }
 
   override def main(): Any = {
-    initialiseEffects()
+    initialise()
 
-    val pids: Set[TupleOpId] = basicScenario()
+    val pids: Set[TupleOpId] = stormScenaro() //basicScenario()
 
     // Spawn processes and get results
     val ops: Map[TupleOpId,TupleOpResult] = sspawn[TupleOpId,Map[TupleOpId,TupleOpResult],TupleOpResult](tupleOperation _, pids, node.getOrElse("tuple_ops", Map.empty))
 
     // Log stuff
-    node.put("local-tuple-space", tupleSpace.getTheory.getText)
+    //node.put("local-tuple-space", tupleSpace.getTheory.getText)
     node.put("tuple_ops", ops)
+    node.put(Exports.NUM_OUTS_CLOSED, node.getOrElse[Set[TupleOpId]](Molecules.OUTS_CLOSED, Set.empty).size)
+    node.put(Exports.NUM_INS_CLOSED, node.getOrElse[Set[TupleOpId]](Molecules.INS_CLOSED, Set.empty).size)
   }
 
   def tupleOperation(toid: TupleOpId)(arg: ProcArg): (TupleOpResult, Status) = {
+    inc(Exports.RUNNING_PROCESSES)
     val firstTime = trueOnFirstExecutionOnly()
     branch(toid.op.initiator==mid() && firstTime && !(toid.issuedAtTime === alchemistTimestamp.toDouble +- 0.1)){ // prevent reentrance
       // println("RE-ENTRANCE ATTEMPT!")
       (TupleOpResult(OperationStatus.completed,None), External)
     } {
-
       val res = toid.op match {
         case outop@OutMe(s, initiator, extension) => OutMeLogic(toid, outop, arg)
         case outop@OutInRegion(s, initiator, region) => OutInRegionLogic(toid, outop, arg)
@@ -101,8 +124,8 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
       }
 
       val status = res._2
-      node.put(toid.uid + "_op", s"${toid.op}{$T}")
-      node.put(toid.uid + "_status", (if (status == Output) 2 else if (status == Bubble) 1 else if (status == Terminated) 3 else 0) + s" {$T}")
+      //node.put(toid.uid + "_op", s"${toid.op}{$T}")
+      //node.put(toid.uid + "_status", (if (status == Output) 2 else if (status == Bubble) 1 else if (status == Terminated) 3 else 0) + s" {$T}")
       res
     }
   }
@@ -128,6 +151,25 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
     pids
   }
 
+  def stormScenaro(): Set[TupleOpId] = {
+    val maxExt = node.get[Double](Molecules.MAX_EXTENSION)
+    val (oFrom,oTo) = node.get[(Double,Double)](Molecules.OUT_WINDOW)
+    val (iFrom,iTo) = node.get[(Double,Double)](Molecules.IN_WINDOW)
+    val (oTh, iTh) = (node.get[Double](Molecules.OUT_EXP_THRES), node.get[Double](Molecules.OUT_EXP_THRES))
+    val templates = Array("a") // ,"b","c")
+    val outs = if(T > oFrom && T < oTo && expDistibution.sample() > oTh){
+      inc(Exports.NUM_OUTS)
+      println(s"[t=$T] node ${mid()} generating an OUT")
+      Set(TupleOpId(s"${T}_${mid()}_out")(OutMe(s"${templates(((templates.size-1)*nextRandom()).round.toInt)}(${(nextRandom()*100).round})", mid(), 500.0), alchemistTimestamp.toDouble))
+    } else { Set.empty }
+    val ins = if(T > iFrom && T < iTo && expDistibution.sample() > iTh){
+      inc(Exports.NUM_INS)
+      println(s"[thread=${Thread.currentThread()}][t=$T] node ${mid()} generating an IN")
+      Set(TupleOpId(s"${T}_${mid()}_in")(In(s"${templates(((templates.size-1)*nextRandom()).round.toInt)}(X)", mid(), 500.0), alchemistTimestamp.toDouble))
+    } else { Set.empty }
+    outs ++ ins
+  }
+
   // TODO: make OUTs functions uniform
   def OutMeLogic(toid: TupleOpId, outOp: OutMe, arg: ProcArg): (TupleOpResult, Status) = {
     val g = classicGradient(toid.op.initiator == mid())
@@ -145,9 +187,14 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
   def outResultInRegion(toid: TupleOpId, s: Tuple, inRegion: Boolean, potential: Double, arg: ProcArg) = {
     node.put(Effects.DOING_OUT, true)
     node.put(Effects.INITIATOR, toid.op.initiator == mid())
+    if(toid.op.initiator == mid()){ inc(Exports.NUM_OUT_INITIATORS) }
     val (events, terminate) = branch(inRegion){ handleRemovalByIN(toid, s, potential, arg) }{ (Set.empty, false) }
     (TupleOpResult(OperationStatus.completed, Some(s), events),
-      if(terminate) Terminated else if(inRegion) Output else External)
+      if(terminate && mid()==toid.op.initiator) {
+          extendSet(Molecules.OUTS_CLOSED, toid)
+          println(s"[thread=${Thread.currentThread()}][t=$T] node ${mid()} terminating $toid")
+          Terminated
+      } else if(inRegion) Output else External)
   }
 
   def handleRemovalByIN(toid: TupleOpId, s: Tuple, potential: Double, arg: ProcArg): (Set[TupleOpEvent], Boolean) = {
@@ -191,15 +238,6 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
 
     node.put(Effects.OUT_PHASE, newPhase.toNum)
 
-    /*
-    val result = TupleOpResult(
-      operationStatus = if(newPhase.isDone) OperationStatus.completed else OperationStatus.inProgress,
-      result = None,
-      newEvents
-    )
-    val status = if(mid() == owner && newPhase.isDone) { Terminated } else if(g < extension){ Output } else { External }
-    (result, status)
-     */
     (newEvents, newPhase.isDone)
   }
 
@@ -220,16 +258,12 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
   def InLogic(toid: TupleOpId, inOp: In, arg: ProcArg): (TupleOpResult, Status) = {
     node.put(Effects.DOING_IN, true)
     node.put(Effects.INITIATOR, toid.op.initiator == mid())
+    if(toid.op.initiator == mid()){ inc(Exports.NUM_IN_INITIATORS) }
     val In(ttemplate, initiator, extension) = inOp
     val owner = mid()==initiator
     val events = arg.flatMap(_._2.events).toSet
     // Note: IN is not trivial: Need consensus on the tuple to remove (as there might be multiple OUTs);
     // As there might be multiple concurrent INs, these must be discriminated by a tuple's owner.
-    // So, it needs 2 feedback loops for 4 flows of events:
-    // 1) TupleRemovalRequested(by,tuple)
-    // 2) TupleRemovalOk(by)
-    // 3) TupleRemovalDone
-    // 4) TupleRemovalEnd
     val g = classicGradient(owner)
 
     val (newPhase,newEvents) = rep[(InPhase,Set[TupleOpEvent])]((InPhase.Start, Set.empty)){ case (currPhase, _) => {
@@ -273,7 +307,11 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
       result = None,
       newEvents
     )
-    val status = if(mid()==initiator && newPhase.isDone) { Terminated } else if(g < extension){ Output } else { External }
+    val status = if(mid()==initiator && newPhase.isDone) {
+      extendSet(Molecules.INS_CLOSED, toid)
+      println(s"[thread=${Thread.currentThread()}][t=$T] node ${mid()} terminating $toid")
+      Terminated
+    } else if(g < extension){ Output } else { External }
     (result, status)
   }
 

@@ -5,16 +5,18 @@ the_plots_labels:
   - '# outs closed'
   - '# ins'
   - '# ins unblocked'
+  - 'num processes'
+  - 'mean processes/dev'
+  - '# out initiators'
+  - '# in initiators'
 the_plots_formats:
-  - [0,1,2,3,4]
-  #- [0,11,12,13]
-#  - [0,2,3,4,5]
+  - [0,1,2,3,4,7,8,6]
 #y_labels: ['# of requests', '# of requests','','% of utilization of workers']
 #file_suffixes:
 #  - errors
 line_widths:
   - [2,2,2,2,2,2,2,2,2,2,2]
-default_colors: &default_colors ["black", "black", "orange","red","yellow",
+default_colors: &default_colors ["black", "cyan", "orange","red","yellow","magenta","green",
                                  "black", "blue","red",
                                  "red", "magenta", "orange", "green", "brown"]
 the_plots_colors:
@@ -22,7 +24,11 @@ the_plots_colors:
 legend_position:
   - "upper left"
   - "upper left"
-legend_size: 12
+legend_bbox_to_anchor:
+  - [-0.077,-0.2]
+legend_columns:
+  - 4
+legend_size: 8
 force_limit_plot_y:
 #  1: 140
 #   3: 1000

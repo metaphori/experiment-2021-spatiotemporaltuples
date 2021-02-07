@@ -71,6 +71,9 @@ trait Utils { self: SpatialTuples =>
 
   def inc(name: String) = node.put[Int](name, node.getOrElse(name, 0)+1)
 
+  def extendSet[V](name: String, v: V) = node.put[Set[V]](name, node.getOrElse[Set[V]](name, Set.empty)+v)
+
+
   implicit class RichNodeManager(nodeManager: NodeManager){
     def extendSetWith[T](name: String, value: T) =
       node.put[Set[T]](name, if(!node.has(name)) Set(value) else node.get[Set[T]](name)+value)

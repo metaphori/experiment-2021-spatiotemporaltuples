@@ -159,7 +159,8 @@ def plot(config,content):
     axes = plt.gca()
     axes.set_ylim(ymax = maxy, ymin = startPlotY[nf])  
     if nf in forceLimitPlotX: axes.set_xlim(xmax = forceLimitPlotX[nf])
-    plt.legend(loc= legendPosition[nf] if nf in legendPosition else 'upper right', prop={'size': legend_size})
+    plt.legend(loc= legendPosition[nf] if nf in legendPosition else 'upper right', prop={'size': legend_size},
+        bbox_to_anchor=legendBBoxToAnchor[nf] if nf in legendBBoxToAnchor else None, ncol = legendColumns[nf] if nf in legendColumns else 1)
     t = plt.title(title_prefix[nf]+title)
     plt.subplots_adjust(top=.84) 
     suffix = (suffixes[nf] if nf in suffixes else "".join(map(str,pformat))) + "_" + parts_suffix
@@ -245,6 +246,8 @@ with open(plotconfig, 'r') as stream:
         forceLimitPlotY = parse_sim_option(pc, 'force_limit_plot_y')
         forceLimitPlotX = parse_sim_option(pc, 'force_limit_plot_x')
         legendPosition = parse_sim_option(pc, 'legend_position')
+        legendBBoxToAnchor = parse_sim_option(pc, 'legend_bbox_to_anchor')
+        legendColumns = parse_sim_option(pc, 'legend_columns')
         y_labels = pc.get('y_labels',[])
         legend_size = pc.get('legend_size',10)
         sampling = pc.get('sampling', False)

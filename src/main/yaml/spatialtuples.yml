@@ -1,26 +1,47 @@
 variables:
   random: &random
     min: 0
-    max: 4
+    max: 2
     step: 1
     default: 0
   range: &range
     formula: 100
   moveFrequency: &moveFrequency
     formula: 2.0 # move once every 2.0 seconds
+  outWindow: &outWindow
+    language: scala
+    formula: (0.0, 50.0)
+  inWindow: &inWindow
+    language: scala
+    formula: (0.0, 50.0)
+  outExpThreshold: &outExpThreshold # of an exponential rate
+    formula: 6.0
+  inExpThreshold: &inExpThreshold
+    formula: 6.0
+  maxExtension: &maxExtension
+    formula: 200.0
 
 export:
   - time
-  - molecule: outs_n
+  - molecule: outs_n # number of OUTs issued [over time]
     aggregators: [sum]
     value-filter: FilterNaN
-  - molecule: outs_closed_n
+  - molecule: outs_closed_n # number of OUTs closed [over time] (no device is running any one of them)
     aggregators: [sum]
     value-filter: FilterNaN
-  - molecule: ins_n
+  - molecule: ins_n # number of INs issued [over time]
     aggregators: [sum]
     value-filter: FilterNaN
-  - molecule: ins_unblocked_n
+  - molecule: ins_unblocked_n # number of INs closed [over time] (no device is running any one of them)
+    aggregators: [sum]
+    value-filter: FilterNaN
+  - molecule: running_processes # number of devices running any tuple operation [per time instant]
+    aggregators: [sum,mean]
+    value-filter: FilterNaN
+  - molecule: outs_devs_n # number of OUT initiators [per time instant]
+    aggregators: [sum]
+    value-filter: FilterNaN
+  - molecule: ins_devs_n # number of IN initiators [per time instant]
     aggregators: [sum]
     value-filter: FilterNaN
 
@@ -76,3 +97,19 @@ displacements:
         concentration: 0
       - molecule: ins_unblocked_n
         concentration: 0
+      - molecule: running_processes
+        concentration: 0
+      - molecule: outs_devs_n
+        concentration: 0
+      - molecule: ins_devs_n
+        concentration: 0
+      - molecule: outWindow
+        concentration: *outWindow
+      - molecule: outExpThreshold
+        concentration: *outExpThreshold
+      - molecule: inWindow
+        concentration: *inWindow
+      - molecule: inExpThreshold
+        concentration: *inExpThreshold
+      - molecule: maxExtension
+        concentration: *maxExtension
