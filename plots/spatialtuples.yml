@@ -39,6 +39,10 @@ force_limit_plot_y:
 #  0: 800
 #  1: 800
 #  3: 800
+hlines:
+  #0: [[10, { linestyle: '--' }]]
+vlines:
+  0: [[50, { linestyle: ':' , color: 'red'}]]
 sampling: false
 #title_prefix: ''
 #excluded_titles: [0]
