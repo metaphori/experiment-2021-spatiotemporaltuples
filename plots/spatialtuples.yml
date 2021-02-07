@@ -26,7 +26,9 @@ legend_position:
   - "upper left"
 legend_bbox_to_anchor:
   - [-0.077,-0.2]
+  - [-0.077,-0.2]
 legend_columns:
+  - 4
   - 4
 legend_size: 8
 export_legend:
@@ -45,6 +47,9 @@ hlines:
   #0: [[10, { linestyle: '--' }]]
 vlines:
   0: [[30, { linestyle: ':' , color: 'red'}]]
-sampling: false
+sampling:
+  0: false
+  1: false
+
 #title_prefix: ''
 #excluded_titles: [0]

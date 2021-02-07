@@ -27,6 +27,7 @@ from textwrap import wrap
 #import fnmatch # for fnmatch.fnmatch(str,glob)
 from functools import reduce
 import pdb
+import copy # for deepcopy
 
 #################################################################################
 ############################## Script functions #################################
@@ -110,79 +111,80 @@ def do_bucketize(contents, nbuckets=100, start=None, end=None):
   
 def merge_samples(contents, configs):
   res = dict()
-  for config,sconfigs in configs.items():
+  for config, sconfigs in configs.items():
     nsamples = len(sconfigs)
-    print("CONFIGURATION: " + str(config) + " has " + str(nsamples) + " samples.")
-    
+    print("\tCONFIGURATION: " + str(config) + " has " + str(nsamples) + " samples.")
+
     matrices = [contents[sample_config] for sample_config in sconfigs]
-    time = list(map(lambda x: round(x), matrices[0][0])) # time should be the same for all
-    matrices = list(map(lambda l: l[1:], matrices)) # skips the time dimension for each sample
+    time = list(map(lambda x: round(x), matrices[0][0]))  # time should be the same for all
+    matrices = list(map(lambda l: l[1:], matrices))  # skips the time dimension for each sample
     # Assumption: the position of values in matrices reflects the time in a consistent manner
-    
+
     # Printing statistics
-    #nplots = len(the_plots_labels) 
-    #stats = dict()
-    #for expdim in range(0,nplots-1): # without 'time', which should be at index 0
+    # nplots = len(the_plots_labels)
+    # stats = dict()
+    # for expdim in range(0,nplots-1): # without 'time', which should be at index 0
     #  for m in matrices:
     #    curdata = m[expdim]
     #    curstats = stats.get(expdim, np.zeros(len(curdata)))
     #    stats[expdim] = curstats + curdata
-    #print(stats)
+    # print(stats)
 
     # Crop the matrices so that they have the same shape (i.e., the minimum shape of all the involved matrices)
-    s = reduce(lambda s,m: min(s,m), [m.shape for m in matrices]) # uniform shape
+    s = reduce(lambda s, m: min(s, m), [m.shape for m in matrices])  # uniform shape
     matrices = [m[:s[0], :s[1]] for m in matrices]
     time = time[:s[1]]
+
     # Merge the matrices
-    merged = reduce(lambda a,b: a+b, matrices)
-    merged = list(map(lambda x: x/nsamples, merged))
-    merged.insert(0,time) # reinserts time
+    merged = reduce(lambda a, b: a + b, matrices)
+    merged = list(map(lambda x: x / nsamples, merged))
+    merged.insert(0, time)  # reinserts time
     res[config] = merged
   return res
   
-def plot(config,content):
+def plot(config,content,nf,pformat):
   title = map("=".join,config)
   if doWrap is not None: title = wrap("    ".join(title), 30)
   title = "\n".join([s.strip() for k,s in enumerate(title) if k not in excluded_titles])
   parts_suffix = "_".join(map("-".join,config))
-  for nf, pformat in enumerate(the_plots_formats):
-    plt.figure() # (figsize=(10,10), dpi=80)
-    plt.xlabel(the_plots_labels[pformat[0]])
-    plt.ylabel(y_labels[nf] if len(y_labels)>nf else "")
-    maxy = float("-inf")
-    for k in range(1,len(pformat)): # skip x-axis which is at pos 0
+
+  plt.figure() # (figsize=(10,10), dpi=80)
+  plt.xlabel(the_plots_labels[pformat[0]])
+  plt.ylabel(y_labels[nf] if len(y_labels)>nf else "")
+  maxy = float("-inf")
+  for k in range(1,len(pformat)): # skip x-axis which is at pos 0
       #pdb.set_trace()
       plt.plot(content[pformat[0]], content[pformat[k]], color=the_plots_colors[nf][pformat[k]], label=the_plots_labels[pformat[k]], linewidth=line_widths[nf][k])
       maxy = max(maxy, np.nanmax(content[pformat[k]]))
-    maxy = min(maxy+10, limitPlotY[nf])
-    if nf in forceLimitPlotY: maxy = forceLimitPlotY[nf]
-    axes = plt.gca()
-    axes.set_ylim(ymax = maxy, ymin = startPlotY[nf])  
-    if nf in forceLimitPlotX: axes.set_xlim(xmax = forceLimitPlotX[nf])
-    legend = plt.legend(loc= legendPosition[nf] if nf in legendPosition else 'upper right', prop={'size': legend_size},
-        bbox_to_anchor=legendBBoxToAnchor[nf] if nf in legendBBoxToAnchor else None, ncol = legendColumns[nf] if nf in legendColumns else 1)
-    if nf in hlines:
+  maxy = min(maxy+10, limitPlotY[nf])
+  if nf in forceLimitPlotY: maxy = forceLimitPlotY[nf]
+  axes = plt.gca()
+  axes.set_ylim(ymax = maxy, ymin = startPlotY[nf])
+  if nf in forceLimitPlotX: axes.set_xlim(xmax = forceLimitPlotX[nf])
+  legend = plt.legend(loc= legendPosition[nf] if nf in legendPosition else 'upper right', prop={'size': legend_size},
+                      bbox_to_anchor=legendBBoxToAnchor[nf] if nf in legendBBoxToAnchor else None, ncol = legendColumns[nf] if nf in legendColumns else 1)
+  if nf in hlines:
       for hline in hlines[nf]:
-        print(hline)
-        y = hline[0]
-        kwargs = hline[1]
-        plt.axhline(y, **kwargs)
-    if nf in vlines:
+          print(hline)
+          y = hline[0]
+          kwargs = hline[1]
+          plt.axhline(y, **kwargs)
+  if nf in vlines:
       for vline in vlines[nf]:
-        x = vline[0]
-        kwargs = vline[1]
-        plt.axvline(x, **kwargs)
-    t = plt.title(title_prefix[nf]+title)
-    plt.subplots_adjust(top=.84) 
-    suffix = (suffixes[nf] if nf in suffixes else "".join(map(str,pformat))) + "_" + parts_suffix
-    savefn = outdir+basefn+"_"+ suffix +".png"
-    print("SAVE: " + savefn)
-    plt.tight_layout()
-    if nf in exportLegend and exportLegend[nf]==True:
+          x = vline[0]
+          kwargs = vline[1]
+          plt.axvline(x, **kwargs)
+  t = plt.title(title_prefix[nf]+title)
+  plt.subplots_adjust(top=.84)
+  suffix = (suffixes[nf] if nf in suffixes else "".join(map(str,pformat))) + "_" + parts_suffix
+  savefn = outdir+basefn+"_"+str(nf)+"_"+suffix +".png"
+  print("SAVE: " + savefn)
+  plt.tight_layout()
+  if nf in exportLegend and exportLegend[nf]==True:
       legendsavefn = outdir+basefn+"_"+str(nf)+"_legend.png"
       export_legend(legend, legendsavefn)
-    plt.savefig(savefn, bbox_inches='tight', pad_inches = 0)  
-    plt.close() 
+  plt.savefig(savefn, bbox_inches='tight', pad_inches = 0)
+  plt.close()
 
 def export_legend(legend, filename="legend.png"):
     fig  = legend.figure
@@ -273,8 +275,9 @@ with open(plotconfig, 'r') as stream:
         legendColumns = parse_sim_option(pc, 'legend_columns')
         y_labels = pc.get('y_labels',[])
         legend_size = pc.get('legend_size',10)
-        sampling = pc.get('sampling', False)
-        sampling_dim = pc.get('samplingField', 'random')
+        #sampling = pc.get('sampling', False)
+        sampling = parse_sim_option(pc, 'sampling')
+        sampling_dim = parse_sim_option(pc, 'samplingField', 'random')
         excluded_titles = pc.get('excluded_titles',[])
         title_prefix = parse_sim_option(pc, 'title_prefix', '')
         doWrap = pc.get('do_wrap')
@@ -301,17 +304,31 @@ contents = process_files(files)
 #   file1_2 [d1=*, d2=B ] => export1=[...], ..., exportK=[...]
 #   file3_4 [d1=*, d2=B'] => export1=[...], ..., exportK=[...]
 configs = contents.keys() # List of configs, where each config is an N-dim tuple of (k,v) tuples
-if sampling:
-  # Let's group configurations (individual datasets) into groups where only a sampling dimension varies
-  # sconfigs is a dict where keys are (dims-'random') and values are lists of configs
-  sconfigs = group_by_varying_values_of(sampling_dim, configs)
-  
-  merged_contents = merge_samples(contents, sconfigs)
-  for title,content in merged_contents.items():
-    plot(title,content)
-else:
-    for title,content in contents.items(): plot(title,content)
-  
+# if sampling:
+#   # Let's group configurations (individual datasets) into groups where only a sampling dimension varies
+#   # sconfigs is a dict where keys are (dims-'random') and values are lists of configs
+#   sconfigs = group_by_varying_values_of(sampling_dim, configs)
+#
+#   merged_contents = merge_samples(contents, sconfigs)
+#   for title,content in merged_contents.items():
+#     plot(title,content)
+# else:
+#   allcontents = dict()
+#   for nf, pformat in enumerate(the_plots_formats):
+#     allcontents[nf] = content
+#   for title,content in contents.items(): plot(title,allcontents)
+
+for nf, pformat in enumerate(the_plots_formats):
+  c = copy.deepcopy(contents)
+  if nf in sampling and sampling[nf] == True:
+    print(str(nf) + " is to be sampled")
+    sconfigs = group_by_varying_values_of(sampling_dim[nf], configs)
+    c = merge_samples(c, sconfigs)
+  else:
+    print(str(nf) + " is NOT to be sampled")
+  for title, content in c.items():
+    plot(title, content, nf, pformat)
+
 
 if bucketize:
   contents = do_bucketize(contents)
