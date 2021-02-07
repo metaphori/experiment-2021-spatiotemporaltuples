@@ -10,14 +10,14 @@ variables:
     formula: 2.0 # move once every 2.0 seconds
   outWindow: &outWindow
     language: scala
-    formula: (0.0, 50.0)
+    formula: (0.0, 30.0)
   inWindow: &inWindow
     language: scala
-    formula: (0.0, 50.0)
+    formula: (0.0, 30.0)
   outExpThreshold: &outExpThreshold # of an exponential rate
-    formula: 6.0
+    formula: 6.2
   inExpThreshold: &inExpThreshold
-    formula: 6.0
+    formula: 6.2
   maxExtension: &maxExtension
     formula: 200.0
 
