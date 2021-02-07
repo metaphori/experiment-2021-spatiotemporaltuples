@@ -159,7 +159,7 @@ def plot(config,content):
     axes = plt.gca()
     axes.set_ylim(ymax = maxy, ymin = startPlotY[nf])  
     if nf in forceLimitPlotX: axes.set_xlim(xmax = forceLimitPlotX[nf])
-    plt.legend(loc= legendPosition[nf] if nf in legendPosition else 'upper right', prop={'size': legend_size},
+    legend = plt.legend(loc= legendPosition[nf] if nf in legendPosition else 'upper right', prop={'size': legend_size},
         bbox_to_anchor=legendBBoxToAnchor[nf] if nf in legendBBoxToAnchor else None, ncol = legendColumns[nf] if nf in legendColumns else 1)
     if nf in hlines:
       for hline in hlines[nf]:
@@ -178,8 +178,17 @@ def plot(config,content):
     savefn = outdir+basefn+"_"+ suffix +".png"
     print("SAVE: " + savefn)
     plt.tight_layout()
+    if nf in exportLegend and exportLegend[nf]==True:
+      legendsavefn = outdir+basefn+"_"+str(nf)+"_legend.png"
+      export_legend(legend, legendsavefn)
     plt.savefig(savefn, bbox_inches='tight', pad_inches = 0)  
     plt.close() 
+
+def export_legend(legend, filename="legend.png"):
+    fig  = legend.figure
+    fig.canvas.draw()
+    bbox  = legend.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    fig.savefig(filename, dpi="figure", bbox_inches=bbox)
 
 pp = pprint.PrettyPrinter(indent=4) # for logging purposes
 
@@ -257,6 +266,7 @@ with open(plotconfig, 'r') as stream:
         forceLimitPlotY = parse_sim_option(pc, 'force_limit_plot_y')
         forceLimitPlotX = parse_sim_option(pc, 'force_limit_plot_x')
         legendPosition = parse_sim_option(pc, 'legend_position')
+        exportLegend = parse_sim_option(pc, 'export_legend')
         hlines = parse_sim_option(pc, 'hlines')
         vlines = parse_sim_option(pc, 'vlines')
         legendBBoxToAnchor = parse_sim_option(pc, 'legend_bbox_to_anchor')

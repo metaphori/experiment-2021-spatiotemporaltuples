@@ -29,6 +29,8 @@ legend_bbox_to_anchor:
 legend_columns:
   - 4
 legend_size: 8
+export_legend:
+  0: true
 force_limit_plot_y:
 #  1: 140
 #   3: 1000
@@ -42,7 +44,7 @@ force_limit_plot_y:
 hlines:
   #0: [[10, { linestyle: '--' }]]
 vlines:
-  0: [[50, { linestyle: ':' , color: 'red'}]]
+  0: [[30, { linestyle: ':' , color: 'red'}]]
 sampling: false
 #title_prefix: ''
 #excluded_titles: [0]
