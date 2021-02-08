@@ -17,6 +17,8 @@ object Exports {
   val NUM_OUTS_CLOSED = "outs_closed_n"
   val NUM_INS_CLOSED = "ins_unblocked_n"
   val RUNNING_PROCESSES = "running_processes"
+  val NUM_OUTS_TIMEOUT = "outs_timeout_n"
+  val NUM_INS_TIMEOUT = "ins_timeout_n"
 }
 object Molecules {
   val MAX_EXTENSION: String = "maxExtension"
@@ -27,6 +29,8 @@ object Molecules {
   val IN_EXP_THRES = "inExpThreshold"
   val OUTS_CLOSED = "closed_outs"
   val INS_CLOSED = "closed_ins"
+  val INS_TIMEOUT: String = "timeout_ins"
+  val OUTS_TIMEOUT: String = "timeout_outs"
 }
 object Effects {
   val OUT_PHASE = "out_phase"
@@ -105,6 +109,8 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
     node.put("tuple_ops", ops)
     node.put(Exports.NUM_OUTS_CLOSED, node.getOrElse[Set[TupleOpId]](Molecules.OUTS_CLOSED, Set.empty).size)
     node.put(Exports.NUM_INS_CLOSED, node.getOrElse[Set[TupleOpId]](Molecules.INS_CLOSED, Set.empty).size)
+    node.put(Exports.NUM_OUTS_TIMEOUT, node.getOrElse[Set[TupleOpId]](Molecules.OUTS_TIMEOUT, Set.empty).size)
+    node.put(Exports.NUM_INS_TIMEOUT, node.getOrElse[Set[TupleOpId]](Molecules.INS_TIMEOUT, Set.empty).size)
   }
 
   def tupleOperation(toid: TupleOpId)(arg: ProcArg): (TupleOpResult, Status) = {
@@ -159,13 +165,14 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
     val templates = Array("a") // ,"b","c")
     val outs = if(T > oFrom && T < oTo && expDistibution.sample() > oTh){
       inc(Exports.NUM_OUTS)
-      println(s"[t=$T] node ${mid()} generating an OUT")
-      Set(TupleOpId(s"${T}_${mid()}_out")(OutMe(s"${templates(((templates.size-1)*nextRandom()).round.toInt)}(${(nextRandom()*100).round})", mid(), 500.0), alchemistTimestamp.toDouble))
+      //println(s"[t=$T] node ${mid()} generating an OUT")
+      Set(TupleOpId(s"${T}_${mid()}_out")(OutMe(s"${templates(((templates.size-1)*nextRandom()).round.toInt)}(${(nextRandom()*100).round})", mid(), 500.0),
+        alchemistTimestamp.toDouble, 200))
     } else { Set.empty }
     val ins = if(T > iFrom && T < iTo && expDistibution.sample() > iTh){
       inc(Exports.NUM_INS)
-      println(s"[thread=${Thread.currentThread()}][t=$T] node ${mid()} generating an IN")
-      Set(TupleOpId(s"${T}_${mid()}_in")(In(s"${templates(((templates.size-1)*nextRandom()).round.toInt)}(X)", mid(), 500.0), alchemistTimestamp.toDouble))
+      //println(s"[thread=${Thread.currentThread()}][t=$T] node ${mid()} generating an IN")
+      Set(TupleOpId(s"${T}_${mid()}_in")(In(s"${templates(((templates.size-1)*nextRandom()).round.toInt)}(X)", mid(), 500.0), alchemistTimestamp.toDouble, 200))
     } else { Set.empty }
     outs ++ ins
   }
@@ -185,15 +192,18 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
   }
 
   def outResultInRegion(toid: TupleOpId, s: Tuple, inRegion: Boolean, potential: Double, arg: ProcArg) = {
+    val owner = toid.op.initiator == mid()
     node.put(Effects.DOING_OUT, true)
-    node.put(Effects.INITIATOR, toid.op.initiator == mid())
-    if(toid.op.initiator == mid()){ inc(Exports.NUM_OUT_INITIATORS) }
+    node.put(Effects.INITIATOR, owner)
+    if(owner){ inc(Exports.NUM_OUT_INITIATORS) }
+    val timeout = branch(owner){ rep(0L)(_+deltaTime().toMillis)/1000.0 > toid.timeout } { false }
     val (events, terminate) = branch(inRegion){ handleRemovalByIN(toid, s, potential, arg) }{ (Set.empty, false) }
     (TupleOpResult(OperationStatus.completed, Some(s), events),
-      if(terminate && mid()==toid.op.initiator) {
-          extendSet(Molecules.OUTS_CLOSED, toid)
-          println(s"[thread=${Thread.currentThread()}][t=$T] node ${mid()} terminating $toid")
-          Terminated
+      if(mid()==toid.op.initiator && (terminate || timeout)) {
+        if(timeout){ extendSet(Molecules.OUTS_TIMEOUT, toid) }
+        extendSet(Molecules.OUTS_CLOSED, toid)
+        //println(s"[thread=${Thread.currentThread()}][t=$T] node ${mid()} terminating $toid")
+        Terminated
       } else if(inRegion) Output else External)
   }
 
@@ -307,9 +317,11 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
       result = None,
       newEvents
     )
-    val status = if(mid()==initiator && newPhase.isDone) {
+    val timeout = branch(owner){ rep(0L)(_+deltaTime().toMillis)/1000.0 > toid.timeout } { false }
+    if(timeout){ extendSet(Molecules.INS_TIMEOUT, toid) }
+    val status = if(mid()==initiator && (newPhase.isDone || timeout)) {
       extendSet(Molecules.INS_CLOSED, toid)
-      println(s"[thread=${Thread.currentThread()}][t=$T] node ${mid()} terminating $toid")
+      // println(s"[thread=${Thread.currentThread()}][t=$T] node ${mid()} terminating $toid")
       Terminated
     } else if(g < extension){ Output } else { External }
     (result, status)

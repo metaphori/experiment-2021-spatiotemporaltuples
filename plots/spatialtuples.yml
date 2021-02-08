@@ -9,16 +9,18 @@ the_plots_labels:
   - 'mean processes/dev'
   - '# out initiators'
   - '# in initiators'
+  - '# out timeouts'
+  - '# in timeouts'
 the_plots_formats:
-  - [0,1,2,3,4,7,8,6]
+  - [0,1,2,3,4,7,8,6,9,10]
+  - [0,1,2,3,4,7,8,6,9,10]
 #y_labels: ['# of requests', '# of requests','','% of utilization of workers']
 #file_suffixes:
 #  - errors
 line_widths:
   - [2,2,2,2,2,2,2,2,2,2,2]
 default_colors: &default_colors ["black", "cyan", "orange","red","yellow","magenta","green",
-                                 "black", "blue","red",
-                                 "red", "magenta", "orange", "green", "brown"]
+                                 "black", "blue","brown", "darkgray", "lightgray"]
 the_plots_colors:
   - *default_colors
 legend_position:
@@ -49,7 +51,7 @@ vlines:
   0: [[30, { linestyle: ':' , color: 'red'}]]
 sampling:
   0: false
-  1: false
+  1: true
 
 #title_prefix: ''
 #excluded_titles: [0]

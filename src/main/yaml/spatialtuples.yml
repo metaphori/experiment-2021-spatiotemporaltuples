@@ -44,6 +44,12 @@ export:
   - molecule: ins_devs_n # number of IN initiators [per time instant]
     aggregators: [sum]
     value-filter: FilterNaN
+  - molecule: outs_timeout_n # number of IN initiators [per time instant]
+    aggregators: [sum]
+    value-filter: FilterNaN
+  - molecule: ins_timeout_n # number of IN initiators [per time instant]
+    aggregators: [sum]
+    value-filter: FilterNaN
 
 seeds:
   scenario: *random
@@ -102,6 +108,10 @@ displacements:
       - molecule: outs_devs_n
         concentration: 0
       - molecule: ins_devs_n
+        concentration: 0
+      - molecule: outs_timeout_n
+        concentration: 0
+      - molecule: ins_timeout_n
         concentration: 0
       - molecule: outWindow
         concentration: *outWindow

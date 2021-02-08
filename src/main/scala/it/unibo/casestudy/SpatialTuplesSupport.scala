@@ -43,7 +43,7 @@ object SpatialTuplesSupport {
 
   case class In(template: TupleTemplate, val initiator: ID, val extension: Double = Double.PositiveInfinity) extends TupleOp
 
-  case class TupleOpId(uid: String)(val op: TupleOp, val issuedAtTime: Double) {
+  case class TupleOpId(uid: String)(val op: TupleOp, val issuedAtTime: Double, val timeout: Double = Double.PositiveInfinity) {
     override def toString: Tuple = uid
     lazy val isOut = op.isInstanceOf[OutMe] || op.isInstanceOf[OutHere] || op.isInstanceOf[OutInRegion]
     lazy val isIn = op.isInstanceOf[In]
