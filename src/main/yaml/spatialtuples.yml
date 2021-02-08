@@ -21,7 +21,7 @@ variables:
   maxExtension: &maxExtension
     formula: 200.0
   opTimeout: &opTimeout
-    formula: 200
+    formula: 200.0
 
 export:
   - time
