@@ -101,13 +101,14 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
     initialise()
 
     val pids: Set[TupleOpId] = stormScenaro() //basicScenario()
-
     // Spawn processes and get results
-    val ops: Map[TupleOpId,TupleOpResult] = sspawn[TupleOpId,Map[TupleOpId,TupleOpResult],TupleOpResult](tupleOperation _, pids, node.getOrElse("tuple_ops", Map.empty))
+    rep(Map[TupleOpId,TupleOpResult]())(ops =>
+      sspawn[TupleOpId,Map[TupleOpId,TupleOpResult],TupleOpResult](tupleOperation _, pids, ops)
+    )
 
     // Log stuff
     //node.put("local-tuple-space", tupleSpace.getTheory.getText)
-    node.put("tuple_ops", ops)
+    //node.put("tuple_ops", ops)
     node.put(Exports.NUM_OUTS_CLOSED, node.getOrElse[Set[TupleOpId]](Molecules.OUTS_CLOSED, Set.empty).size)
     node.put(Exports.NUM_INS_CLOSED, node.getOrElse[Set[TupleOpId]](Molecules.INS_CLOSED, Set.empty).size)
     node.put(Exports.NUM_OUTS_TIMEOUT, node.getOrElse[Set[TupleOpId]](Molecules.OUTS_TIMEOUT, Set.empty).size)
