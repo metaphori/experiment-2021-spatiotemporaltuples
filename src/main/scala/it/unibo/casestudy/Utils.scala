@@ -3,7 +3,7 @@ package it.unibo.casestudy
 import it.unibo.alchemist.model.implementations.nodes.NodeManager
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 
-trait Utils { self: SpatialTuples =>
+trait Utils extends BlockG with BlockC { self: AggregateProgram with ScafiAlchemistSupport with StandardSensors =>
 
   def branchOn[V,O](v: V)(f: V => O): O =
     align(v){ f(_) }
