@@ -177,20 +177,20 @@ def plot(config,content,nf,pformat):
   t = plt.title(title_prefix[nf]+title)
   plt.subplots_adjust(top=.84)
   suffix = (suffixes[nf] if nf in suffixes else "".join(map(str,pformat))) + "_" + parts_suffix
-  savefn = outdir+basefn+"_"+str(nf)+"_"+suffix +".png"
+  savefn = outdir+basefn+"_"+str(nf)+"_"+suffix +"." + figFormat
   print("SAVE: " + savefn)
   plt.tight_layout()
   if nf in exportLegend and exportLegend[nf]==True:
-      legendsavefn = outdir+basefn+"_"+str(nf)+"_legend.png"
+      legendsavefn = outdir+basefn+"_"+str(nf)+"_legend." + figFormat
       export_legend(legend, legendsavefn)
-  plt.savefig(savefn, bbox_inches='tight', pad_inches = 0)
+  plt.savefig(savefn, bbox_inches='tight', pad_inches = 0, format=figFormat)
   plt.close()
 
-def export_legend(legend, filename="legend.png"):
+def export_legend(legend, filename="legend.pdf"):
     fig  = legend.figure
     fig.canvas.draw()
     bbox  = legend.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-    fig.savefig(filename, dpi="figure", bbox_inches=bbox)
+    fig.savefig(filename, dpi="figure", bbox_inches=bbox, format=figFormat)
 
 pp = pprint.PrettyPrinter(indent=4) # for logging purposes
 
@@ -258,6 +258,7 @@ def parse_sim_option(pc, option, default=None):
 with open(plotconfig, 'r') as stream:
     try:
         pc = yaml.load(stream, Loader=yaml.Loader)
+        figFormat = pc.get('format','pdf')
         the_plots_labels = pc['the_plots_labels']
         the_plots_formats = pc['the_plots_formats']
         the_plots_colors = parse_sim_option(pc, 'the_plots_colors')

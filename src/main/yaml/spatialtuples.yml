@@ -20,6 +20,8 @@ variables:
     formula: 6.2
   maxExtension: &maxExtension
     formula: 200.0
+  opTimeout: &opTimeout
+    formula: 200
 
 export:
   - time
@@ -67,7 +69,9 @@ network-model:
 
 pools:
   - pool: &program
-      - time-distribution: 1
+      - time-distribution: # 1
+          type: ExponentialTime
+          parameters: [ 1.0 ] # lambda (mean freq)
         type: Event
         actions:
           - type: RunScafiProgram
@@ -123,3 +127,5 @@ displacements:
         concentration: *inExpThreshold
       - molecule: maxExtension
         concentration: *maxExtension
+      - molecule: opTimeout
+        concentration: *opTimeout

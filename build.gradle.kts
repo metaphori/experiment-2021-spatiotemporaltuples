@@ -110,6 +110,8 @@ tasks.register<Jar>("fatJar") {
     with(tasks.jar.get() as CopySpec)
 }
 
+val baseDataFileName: String? by project
+
 fun makeTest(
         file: String,
         name: String = file,
@@ -144,6 +146,7 @@ fun makeTest(
     val today = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"))
 
     task<JavaExec>("$name") {
+        val datafilename = "${today}-" +  (baseDataFileName ?: name)
         dependsOn("build")
         classpath = sourceSets["main"].runtimeClasspath
         classpath("src/main/protelis")
@@ -159,7 +162,7 @@ fun makeTest(
         args(
                 "-y", "src/main/yaml/${file}.yml",
                 "-t", "$time",
-                "-e", "data/${today}-${name}",
+                "-e", "data/$datafilename",
                 "-p", threadCount,
                 "-i", "$sampling"
         )

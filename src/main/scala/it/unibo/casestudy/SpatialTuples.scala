@@ -21,6 +21,7 @@ object Exports {
   val NUM_INS_TIMEOUT = "ins_timeout_n"
 }
 object Molecules {
+  val OP_TIMEOUT: String = "opTimeout"
   val MAX_EXTENSION: String = "maxExtension"
   val PROCS = "procs"
   val OUT_WINDOW = "outWindow"
@@ -167,12 +168,13 @@ class SpatialTuples extends AggregateProgram with StandardSensors with ScafiAlch
       inc(Exports.NUM_OUTS)
       //println(s"[t=$T] node ${mid()} generating an OUT")
       Set(TupleOpId(s"${T}_${mid()}_out")(OutMe(s"${templates(((templates.size-1)*nextRandom()).round.toInt)}(${(nextRandom()*100).round})", mid(), 500.0),
-        alchemistTimestamp.toDouble, 200))
+        alchemistTimestamp.toDouble, node.getOrElse(Molecules.OP_TIMEOUT, 200)))
     } else { Set.empty }
     val ins = if(T > iFrom && T < iTo && expDistibution.sample() > iTh){
       inc(Exports.NUM_INS)
       //println(s"[thread=${Thread.currentThread()}][t=$T] node ${mid()} generating an IN")
-      Set(TupleOpId(s"${T}_${mid()}_in")(In(s"${templates(((templates.size-1)*nextRandom()).round.toInt)}(X)", mid(), 500.0), alchemistTimestamp.toDouble, 200))
+      Set(TupleOpId(s"${T}_${mid()}_in")(In(s"${templates(((templates.size-1)*nextRandom()).round.toInt)}(X)", mid(), 500.0),
+        alchemistTimestamp.toDouble, node.getOrElse(Molecules.OP_TIMEOUT, 200)))
     } else { Set.empty }
     outs ++ ins
   }
