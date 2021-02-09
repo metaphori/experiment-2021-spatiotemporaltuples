@@ -1,16 +1,42 @@
-package it.unibo.casestudy
+package it.unibo.spatialtuples
 
 import alice.tuprolog.Term
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
-import it.unibo.casestudy.SpatialTuplesSupport.{Tuple, TupleOpId}
+import it.unibo.experiments.{Effects, Exports, Molecules}
 import it.unibo.scafi.space.Point2D
+import it.unibo.utils.Utils
+import org.scalactic.TripleEquals._
+import org.scalactic.Tolerance._
 
 
-trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC with BlockS with Utils {
+trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC with BlockS with CustomSpawn with Utils {
   self: AggregateProgram with StandardSensors =>
   import SpatialTuplesSupport._
   import SpawnInterface._
   import TupleSupport._
+
+  def tupleOperation(toid: TupleOpId)(arg: ProcArg): (TupleOpResult, Status) = {
+    inc(Exports.RUNNING_PROCESSES)
+    val firstTime = trueOnFirstExecutionOnly()
+    branch(toid.op.initiator==mid() && firstTime && !(toid.issuedAtTime === alchemistTimestamp.toDouble +- 0.1)){ // prevent reentrance
+      // println("RE-ENTRANCE ATTEMPT!")
+      (TupleOpResult(OperationStatus.completed,None), External)
+    } {
+      val res = toid.op match {
+        case outop@OutMe(s, initiator, extension) => OutMeLogic(toid, outop, arg)
+        case outop@OutInRegion(s, initiator, region) => OutInRegionLogic(toid, outop, arg)
+        case outop@OutHere(s, initiator, position, extension) => OutInRegionLogic(toid, OutInRegion(s, initiator, CircularRegion(position, extension)), arg)
+        case readop@Read(ttemplate, initiator, extension) => ReadLogic(toid, readop, arg)
+        case inop@In(ttemplate, initiator, extension) => InLogic(toid, inop, arg)
+        case _ => ??? // (OperationResult("invalid"), Terminated)
+      }
+
+      val status = res._2
+      //node.put(toid.uid + "_op", s"${toid.op}{$T}")
+      //node.put(toid.uid + "_status", (if (status == Output) 2 else if (status == Bubble) 1 else if (status == Terminated) 3 else 0) + s" {$T}")
+      res
+    }
+  }
 
   // TODO: make OUTs functions uniform
   def OutMeLogic(toid: TupleOpId, outOp: OutMe, arg: ProcArg): (TupleOpResult, Status) = {

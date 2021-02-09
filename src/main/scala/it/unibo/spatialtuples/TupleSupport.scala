@@ -1,4 +1,4 @@
-package it.unibo.casestudy
+package it.unibo.spatialtuples
 
 import alice.tuprolog._
 

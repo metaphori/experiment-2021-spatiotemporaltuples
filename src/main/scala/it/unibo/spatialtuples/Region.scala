@@ -1,7 +1,6 @@
-package it.unibo.casestudy
+package it.unibo.spatialtuples
 
-import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
-import it.unibo.scafi.space.{Point2D, Point3D}
+import it.unibo.scafi.space.Point2D
 
 trait SpatialSituation
 object SpatialSituation {

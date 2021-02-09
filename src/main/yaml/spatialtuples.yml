@@ -6,8 +6,6 @@ variables:
     default: 0
   range: &range
     formula: 100
-  moveFrequency: &moveFrequency
-    formula: 2.0 # move once every 2.0 seconds
   outWindow: &outWindow
     language: scala
     formula: (0.0, 30.0)
@@ -22,11 +20,15 @@ variables:
     formula: 200.0
   opTimeout: &opTimeout
     formula: 200.0
+  moveFrequency: &moveFrequency
+    formula: 2.0 # move once every 2.0 seconds
   speed: &speed
     min: 0.0
     max: 50.0
     step: 10.0
     default: 0.0
+  failureProb: &failureProb
+    formula: 0.005 # 0.5%
 
 export:
   - time
@@ -80,7 +82,7 @@ pools:
         type: Event
         actions:
           - type: RunScafiProgram
-            parameters: [it.unibo.casestudy.SpatialTuples, 5.0] # second argument is retention time
+            parameters: [it.unibo.experiments.SpatialTuplesStorm, 5.0] # second argument is retention time
       - program: send
   - pool: &taskGenerator
       - time-distribution:
@@ -89,7 +91,7 @@ pools:
         type: Event
         actions:
           - type: RunScafiProgram
-            parameters: [it.unibo.casestudy.TaskGenerator, 5.0] # second argument is retention time
+            parameters: [it.unibo.spatialtuples.TaskGenerator, 5.0] # second argument is retention time
   - pool: &move
       - time-distribution: *moveFrequency
         type: Event
@@ -136,3 +138,5 @@ displacements:
         concentration: *maxExtension
       - molecule: opTimeout
         concentration: *opTimeout
+      - molecule: failureProb
+        concentration: *failureProb

@@ -1,9 +1,8 @@
-package it.unibo.casestudy
+package it.unibo.experiments
 
-import alice.tuprolog.{Prolog, Term}
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
-import it.unibo.casestudy.SpatialTuplesSupport._
-import it.unibo.scafi.space.Point2D
+import it.unibo.spatialtuples.SpatialTuplesSupport._
+import it.unibo.spatialtuples.{CircularRegion, SpatialTuplesSupport}
 import it.unibo.utils.MovementUtils
 import org.apache.commons.math3.distribution.ExponentialDistribution
 import org.scalactic.Tolerance._
@@ -43,13 +42,11 @@ object Effects {
   val INITIATOR = "initiator"
 }
 
-class SpatialTuples extends AggregateProgram with StandardSensors with CustomSpawn with Gradients with MovementUtils with SpatialTuplesSupport
+class SpatialTuplesStorm extends AggregateProgram with StandardSensors with CustomSpawn with Gradients with MovementUtils with SpatialTuplesSupport
   /*with LindaDSL*/ {
   import SpawnInterface._
 
   lazy val expDistibution = new ExponentialDistribution(alchemistRandomGen, 1.0)
-
-  def T = alchemistTimestamp.toDouble.toLong
 
   var opsStarted: Set[TupleOpId] = Set.empty
   var opsClosed: Set[TupleOpId] = Set.empty
@@ -93,29 +90,6 @@ class SpatialTuples extends AggregateProgram with StandardSensors with CustomSpa
     node.put(Exports.NUM_INS_CLOSED, node.getOrElse[Set[TupleOpId]](Molecules.INS_CLOSED, Set.empty).size)
     node.put(Exports.NUM_OUTS_TIMEOUT, node.getOrElse[Set[TupleOpId]](Molecules.OUTS_TIMEOUT, Set.empty).size)
     node.put(Exports.NUM_INS_TIMEOUT, node.getOrElse[Set[TupleOpId]](Molecules.INS_TIMEOUT, Set.empty).size)
-  }
-
-  def tupleOperation(toid: TupleOpId)(arg: ProcArg): (TupleOpResult, Status) = {
-    inc(Exports.RUNNING_PROCESSES)
-    val firstTime = trueOnFirstExecutionOnly()
-    branch(toid.op.initiator==mid() && firstTime && !(toid.issuedAtTime === alchemistTimestamp.toDouble +- 0.1)){ // prevent reentrance
-      // println("RE-ENTRANCE ATTEMPT!")
-      (TupleOpResult(OperationStatus.completed,None), External)
-    } {
-      val res = toid.op match {
-        case outop@OutMe(s, initiator, extension) => OutMeLogic(toid, outop, arg)
-        case outop@OutInRegion(s, initiator, region) => OutInRegionLogic(toid, outop, arg)
-        case outop@OutHere(s, initiator, position, extension) => OutInRegionLogic(toid, OutInRegion(s, initiator, CircularRegion(position, extension)), arg)
-        case readop@Read(ttemplate, initiator, extension) => ReadLogic(toid, readop, arg)
-        case inop@In(ttemplate, initiator, extension) => InLogic(toid, inop, arg)
-        case _ => ??? // (OperationResult("invalid"), Terminated)
-      }
-
-      val status = res._2
-      //node.put(toid.uid + "_op", s"${toid.op}{$T}")
-      //node.put(toid.uid + "_status", (if (status == Output) 2 else if (status == Bubble) 1 else if (status == Terminated) 3 else 0) + s" {$T}")
-      res
-    }
   }
 
   /**

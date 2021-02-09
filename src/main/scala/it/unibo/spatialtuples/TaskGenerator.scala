@@ -1,7 +1,7 @@
-package it.unibo.casestudy
+package it.unibo.spatialtuples
 
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
-import it.unibo.casestudy.TupleSupport.addTupleIfNotAlreadyThere
+import it.unibo.spatialtuples.TupleSupport.addTupleIfNotAlreadyThere
 import org.scalactic.Tolerance._
 import org.scalactic.TripleEquals._
 

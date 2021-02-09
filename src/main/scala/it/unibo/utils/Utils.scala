@@ -1,9 +1,11 @@
-package it.unibo.casestudy
+package it.unibo.utils
 
 import it.unibo.alchemist.model.implementations.nodes.NodeManager
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
 
 trait Utils extends BlockG with BlockC { self: AggregateProgram with ScafiAlchemistSupport with StandardSensors =>
+
+  def T = alchemistTimestamp.toDouble.toLong
 
   def branchOn[V,O](v: V)(f: V => O): O =
     align(v){ f(_) }
