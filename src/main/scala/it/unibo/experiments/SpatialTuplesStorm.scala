@@ -1,55 +1,17 @@
 package it.unibo.experiments
 
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
+import it.unibo.spatialtuples.SpatialTuplesSupport
 import it.unibo.spatialtuples.SpatialTuplesSupport._
-import it.unibo.spatialtuples.{CircularRegion, SpatialTuplesSupport}
 import it.unibo.utils.MovementUtils
 import org.apache.commons.math3.distribution.ExponentialDistribution
-import org.scalactic.Tolerance._
-import org.scalactic.TripleEquals._
 
-object Exports {
-  val NUM_OUT_INITIATORS = "outs_devs_n"
-  val NUM_IN_INITIATORS = "ins_devs_n"
-  val NUM_OUTS = "outs_n"
-  val NUM_INS = "ins_n"
-  val NUM_OUTS_CLOSED = "outs_closed_n"
-  val NUM_INS_CLOSED = "ins_unblocked_n"
-  val RUNNING_PROCESSES = "running_processes"
-  val NUM_OUTS_TIMEOUT = "outs_timeout_n"
-  val NUM_INS_TIMEOUT = "ins_timeout_n"
-}
-object Molecules {
-  val OP_TIMEOUT: String = "opTimeout"
-  val MAX_EXTENSION: String = "maxExtension"
-  val PROCS = "procs"
-  val OUT_WINDOW = "outWindow"
-  val OUT_EXP_THRES = "outExpThreshold"
-  val IN_WINDOW = "inWindow"
-  val IN_EXP_THRES = "inExpThreshold"
-  val OUTS_CLOSED = "closed_outs"
-  val INS_CLOSED = "closed_ins"
-  val INS_TIMEOUT: String = "timeout_ins"
-  val OUTS_TIMEOUT: String = "timeout_outs"
-}
-object Effects {
-  val OUT_PHASE = "out_phase"
-  val IN_PHASE = "in_phase"
-  val IN_PHASE2 = "in_phase2"
-  val DOING_OUT = "doing_out"
-  val DOING_IN = "doing_in"
-  val DOING_READ = "doing_read"
-  val INITIATOR = "initiator"
-}
 
 class SpatialTuplesStorm extends AggregateProgram with StandardSensors with CustomSpawn with Gradients with MovementUtils with SpatialTuplesSupport
   /*with LindaDSL*/ {
-  import SpawnInterface._
+  import SpatialTuplesStorm._
 
   lazy val expDistibution = new ExponentialDistribution(alchemistRandomGen, 1.0)
-
-  var opsStarted: Set[TupleOpId] = Set.empty
-  var opsClosed: Set[TupleOpId] = Set.empty
 
   def initialise() = {
     initialiseExports()
@@ -132,5 +94,41 @@ class SpatialTuplesStorm extends AggregateProgram with StandardSensors with Cust
         alchemistTimestamp.toDouble, node.getOrElse(Molecules.OP_TIMEOUT, 200)))
     } else { Set.empty }
     outs ++ ins
+  }
+}
+
+object SpatialTuplesStorm {
+  object Exports {
+    val NUM_OUT_INITIATORS = "outs_devs_n"
+    val NUM_IN_INITIATORS = "ins_devs_n"
+    val NUM_OUTS = "outs_n"
+    val NUM_INS = "ins_n"
+    val NUM_OUTS_CLOSED = "outs_closed_n"
+    val NUM_INS_CLOSED = "ins_unblocked_n"
+    val RUNNING_PROCESSES = "running_processes"
+    val NUM_OUTS_TIMEOUT = "outs_timeout_n"
+    val NUM_INS_TIMEOUT = "ins_timeout_n"
+  }
+  object Molecules {
+    val OP_TIMEOUT: String = "opTimeout"
+    val MAX_EXTENSION: String = "maxExtension"
+    val PROCS = "procs"
+    val OUT_WINDOW = "outWindow"
+    val OUT_EXP_THRES = "outExpThreshold"
+    val IN_WINDOW = "inWindow"
+    val IN_EXP_THRES = "inExpThreshold"
+    val OUTS_CLOSED = "closed_outs"
+    val INS_CLOSED = "closed_ins"
+    val INS_TIMEOUT: String = "timeout_ins"
+    val OUTS_TIMEOUT: String = "timeout_outs"
+  }
+  object Effects {
+    val OUT_PHASE = "out_phase"
+    val IN_PHASE = "in_phase"
+    val IN_PHASE2 = "in_phase2"
+    val DOING_OUT = "doing_out"
+    val DOING_IN = "doing_in"
+    val DOING_READ = "doing_read"
+    val INITIATOR = "initiator"
   }
 }

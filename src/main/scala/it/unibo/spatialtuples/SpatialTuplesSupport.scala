@@ -2,7 +2,6 @@ package it.unibo.spatialtuples
 
 import alice.tuprolog.Term
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
-import it.unibo.experiments.{Effects, Exports, Molecules}
 import it.unibo.scafi.space.Point2D
 import it.unibo.utils.Utils
 import org.scalactic.TripleEquals._
@@ -11,6 +10,7 @@ import org.scalactic.Tolerance._
 
 trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC with BlockS with CustomSpawn with Utils {
   self: AggregateProgram with StandardSensors =>
+  import it.unibo.experiments.SpatialTuplesStorm._ // TODO: this is merely for Exports and Effects
   import SpatialTuplesSupport._
   import SpawnInterface._
   import TupleSupport._
