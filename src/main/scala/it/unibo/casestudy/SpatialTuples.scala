@@ -43,26 +43,6 @@ object Effects {
   val INITIATOR = "initiator"
 }
 
-trait OutPhase {
-  val toNum: Int
-  def isDone: Boolean = this match { case OutPhase.Done => true; case _ => false }
-}
-object OutPhase {
-  case object Normal extends OutPhase { override val toNum: Int = 1 }
-  case class Serving(out: TupleOpId) extends OutPhase { override val toNum: Int = 2 }
-  case object Done extends OutPhase { override val toNum: Int = 3 }
-}
-
-trait InPhase {
-  val toNum: Int
-  def isDone: Boolean = this match { case InPhase.Done(_) => true; case _ => false }
-}
-object InPhase {
-  case object Start extends InPhase { override val toNum: Int = 1 }
-  case class Read(out: TupleOpId) extends InPhase { override val toNum: Int = 2 }
-  case class Done(outTuple: Tuple) extends InPhase { override val toNum: Int = 3 }
-}
-
 class SpatialTuples extends AggregateProgram with StandardSensors with CustomSpawn with Gradients with MovementUtils with SpatialTuplesSupport
   /*with LindaDSL*/ {
   import SpawnInterface._

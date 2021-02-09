@@ -2,7 +2,9 @@ package it.unibo.casestudy
 
 import alice.tuprolog.Term
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
+import it.unibo.casestudy.SpatialTuplesSupport.{Tuple, TupleOpId}
 import it.unibo.scafi.space.Point2D
+
 
 trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC with BlockS with Utils {
   self: AggregateProgram with StandardSensors =>
@@ -263,49 +265,23 @@ object SpatialTuplesSupport {
   //case class ProcArg(localTuples: Set[Tuple] = Set.empty, procs: Set[TupleOpId] = Set.empty)
   type ProcArg = Map[TupleOpId, TupleOpResult]
 
-  trait ProcessEvent
-
-  case class TupleRemovalRequested(by: String, tuple: TupleTemplate) extends ProcessEvent {
-    override val toString: TupleTemplate = s"""inRequested(by("${by}"),template("$tuple"))"""
+  trait OutPhase {
+    val toNum: Int
+    def isDone: Boolean = this match { case OutPhase.Done => true; case _ => false }
+  }
+  object OutPhase {
+    case object Normal extends OutPhase { override val toNum: Int = 1 }
+    case class Serving(out: TupleOpId) extends OutPhase { override val toNum: Int = 2 }
+    case object Done extends OutPhase { override val toNum: Int = 3 }
   }
 
-  object TupleRemovalRequested {
-    val By = "Uid"
-    val Template = "Template"
-    val variables: List[String] = List(By, Template)
-
-    def matchingTemplate(by: String, template: String): TupleTemplate = s"inRequested(by($by),template($template))"
-
-    val matchTemplate = matchingTemplate(By, Template)
+  trait InPhase {
+    val toNum: Int
+    def isDone: Boolean = this match { case InPhase.Done(_) => true; case _ => false }
   }
-
-  case class TupleRemovalOk(by: String, to: String, tuple: Tuple) extends ProcessEvent {
-    override val toString: TupleTemplate = s"""inOk(by("${by}"),to("$to"),tuple("$tuple"))"""
+  object InPhase {
+    case object Start extends InPhase { override val toNum: Int = 1 }
+    case class Read(out: TupleOpId) extends InPhase { override val toNum: Int = 2 }
+    case class Done(outTuple: Tuple) extends InPhase { override val toNum: Int = 3 }
   }
-
-  object TupleRemovalOk {
-    val By = "Uid"
-    val To = "Template"
-    val Tuple = "Tuple"
-    val variables: List[String] = List(By, To, Tuple)
-
-    def matchingTemplate(by: String, to: String, tuple: Tuple): TupleTemplate = s"inOk(by($by),to($to),tuple($tuple))"
-
-    val matchTemplate = matchingTemplate(By, To, Tuple)
-  }
-
-  case class TupleRemovalDone(by: String, to: String) extends ProcessEvent {
-    override val toString: TupleTemplate = s"""inDone(by("${by}"),to("$to"))"""
-  }
-
-  object TupleRemovalDone {
-    val By = "Uid"
-    val To = "Template"
-    val variables: List[String] = List(By, To)
-
-    def matchingTemplate(by: String, to: String): TupleTemplate = s"inDone(by($by),to($to))"
-
-    val matchTemplate = matchingTemplate(By, To)
-  }
-
 }
