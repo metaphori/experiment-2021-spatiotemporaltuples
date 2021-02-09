@@ -22,6 +22,11 @@ variables:
     formula: 200.0
   opTimeout: &opTimeout
     formula: 200.0
+  speed: &speed
+    min: 0.0
+    max: 50.0
+    step: 10.0
+    default: 0.0
 
 export:
   - time
@@ -88,7 +93,9 @@ pools:
   - pool: &move
       - time-distribution: *moveFrequency
         type: Event
-        actions: []
+        actions:
+          - type: MoveToTarget
+            parameters: [ target, *speed]
 
 displacements:
   - in:

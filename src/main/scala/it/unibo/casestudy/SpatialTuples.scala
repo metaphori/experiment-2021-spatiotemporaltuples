@@ -84,6 +84,8 @@ class SpatialTuples extends AggregateProgram with StandardSensors with CustomSpa
       sspawn[TupleOpId,Map[TupleOpId,TupleOpResult],TupleOpResult](tupleOperation _, pids, ops)
     )
 
+    rectangleWalk()
+
     // Log stuff
     //node.put("local-tuple-space", tupleSpace.getTheory.getText)
     //node.put("tuple_ops", ops)
