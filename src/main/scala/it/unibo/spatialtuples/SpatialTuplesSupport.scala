@@ -47,15 +47,16 @@ trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC
   }
 
   def OutInRegionLogic(toid: TupleOpId, outOp: OutInRegion, arg: ProcArg): (TupleOpResult, Status) = {
-    val owner = S(Double.PositiveInfinity, nbrRange _) // toid.op.initiator == mid()
-    val pos = alchemistEnvironment.getPosition(alchemistEnvironment.getNodeByID(outOp.initiator)).getCoordinates
-    val inRegion = outOp.region.withinRegion(Point2D(pos(0), pos(1)))
+    val owner = gossipBy[ID](mid(), Math.min) == mid()
+    //A. toid.op.initiator == mid()
+    //B. includingSelf.minHoodSelector(nbr { mid() })(nbr { outOp.region.center.distance(currentPosition()) }) == mid()
+    //C. S(Double.PositiveInfinity, nbrRange _)
+    val inRegion = outOp.region.withinRegion(currentPosition())
     val g = classicGradient(owner)
     outResultInRegion(toid, owner, outOp.datum, inRegion, g, arg)
   }
 
   def outResultInRegion(toid: TupleOpId, owner: Boolean, s: Tuple, inRegion: Boolean, potential: Double, arg: ProcArg) = {
-    val owner = toid.op.initiator == mid()
     node.put(Effects.DOING_OUT, true)
     node.put(Effects.INITIATOR, owner)
     if(owner){ inc(Exports.NUM_OUT_INITIATORS) }

@@ -6,6 +6,8 @@ import it.unibo.scafi.space.{Point2D, Point3D}
 trait MovementUtils {
   self: AggregateProgram with StandardSensors with ScafiAlchemistSupport =>
 
+
+
   def rectangleWalk(p1: Point2D = Point2D(0,0), p2: Point2D = Point2D(1000,1000), molecule: String = "target"): Unit = {
     val goal = randomPoint()
     node.put(molecule, ifClose(cropRectangle(goal, p1, p2)))

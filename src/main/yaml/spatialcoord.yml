@@ -1,0 +1,281 @@
+variables:
+  random: &random
+    min: 0
+    max: 2
+    step: 1
+    default: 0
+  range: &range
+    formula: 100
+  outWindow: &outWindow
+    language: scala
+    formula: (0.0, 30.0)
+  inWindow: &inWindow
+    language: scala
+    formula: (0.0, 30.0)
+  outExpThreshold: &outExpThreshold # of an exponential rate
+    formula: 6.2
+  inExpThreshold: &inExpThreshold
+    formula: 6.2
+  maxExtension: &maxExtension
+    formula: 200.0
+  opTimeout: &opTimeout
+    formula: 200.0
+  moveFrequency: &moveFrequency
+    formula: 2.0 # move once every 2.0 seconds
+  speed: &speed
+    min: 10.0
+    max: 50.0
+    step: 10.0
+    default: 10.0
+  failureProb: &failureProb
+    formula: 0.005 # 0.5%
+
+export:
+  - time
+  - molecule: outs_n # number of OUTs issued [over time]
+    aggregators: [sum]
+    value-filter: FilterNaN
+  - molecule: outs_closed_n # number of OUTs closed [over time] (no device is running any one of them)
+    aggregators: [sum]
+    value-filter: FilterNaN
+  - molecule: ins_n # number of INs issued [over time]
+    aggregators: [sum]
+    value-filter: FilterNaN
+  - molecule: ins_unblocked_n # number of INs closed [over time] (no device is running any one of them)
+    aggregators: [sum]
+    value-filter: FilterNaN
+  - molecule: running_processes # number of devices running any tuple operation [per time instant]
+    aggregators: [sum,mean]
+    value-filter: FilterNaN
+  - molecule: outs_devs_n # number of OUT initiators [per time instant]
+    aggregators: [sum]
+    value-filter: FilterNaN
+  - molecule: ins_devs_n # number of IN initiators [per time instant]
+    aggregators: [sum]
+    value-filter: FilterNaN
+  - molecule: outs_timeout_n # number of IN initiators [per time instant]
+    aggregators: [sum]
+    value-filter: FilterNaN
+  - molecule: ins_timeout_n # number of IN initiators [per time instant]
+    aggregators: [sum]
+    value-filter: FilterNaN
+
+seeds:
+  scenario: *random
+  simulation: *random
+
+incarnation: scafi
+
+environment:
+  type: Continuous2DEnvironment
+  parameters: []
+
+network-model:
+  type: ConnectWithinDistance #*connectionType
+  parameters: [*range]
+
+pools:
+  - pool: &program
+      - time-distribution: # 1
+          type: DiracComb # ExponentialTime
+          parameters: [ 1.0 ] # lambda (mean freq)
+        type: Event
+        actions:
+          - type: RunScafiProgram
+            parameters: [it.unibo.casestudy.SpatialCoordination, 5.0] # second argument is retention time
+      - program: send
+  - pool: &move
+      - time-distribution:
+          type: DiracComb
+          parameters: [5.0, 0.5] # start at time=5, and perform 0.5 events per time unit
+        type: Event
+        actions:
+          - type: MoveToTarget
+            parameters: [ target, *speed]
+
+displacements:
+  # 10 EXPLORERS
+  - in:
+      type: Rectangle #GeometricGradientRectangle
+      parameters: [ 10, 0, -25, 25, 25 ]
+    programs:
+      - *move
+      - *program
+    contents:
+      - molecule: obstacle
+        concentration: 0
+      - molecule: victim
+        concentration: 0
+      - molecule: explorer
+        concentration: 1
+      - molecule: outs_n
+        concentration: 0
+      - molecule: outs_closed_n
+        concentration: 0
+      - molecule: ins_n
+        concentration: 0
+      - molecule: ins_unblocked_n
+        concentration: 0
+      - molecule: running_processes
+        concentration: 0
+      - molecule: outs_devs_n
+        concentration: 0
+      - molecule: ins_devs_n
+        concentration: 0
+      - molecule: outs_timeout_n
+        concentration: 0
+      - molecule: ins_timeout_n
+        concentration: 0
+      - molecule: outWindow
+        concentration: *outWindow
+      - molecule: outExpThreshold
+        concentration: *outExpThreshold
+      - molecule: inWindow
+        concentration: *inWindow
+      - molecule: inExpThreshold
+        concentration: *inExpThreshold
+      - molecule: maxExtension
+        concentration: *maxExtension
+      - molecule: opTimeout
+        concentration: *opTimeout
+      - molecule: failureProb
+        concentration: *failureProb
+  # TACTICAL NETWORK
+  - in:
+      type: Grid #GeometricGradientRectangle
+      parameters: [-50, -200, 600, 200, 95, 95, 4.99, 4.99]
+    programs:
+      #- *taskGenerator
+      - *program
+    contents:
+      - molecule: obstacle
+        concentration: 0
+      - molecule: victim
+        concentration: 0
+      - molecule: explorer
+        concentration: 0
+      - molecule: outs_n
+        concentration: 0
+      - molecule: outs_n
+        concentration: 0
+      - molecule: outs_closed_n
+        concentration: 0
+      - molecule: ins_n
+        concentration: 0
+      - molecule: ins_unblocked_n
+        concentration: 0
+      - molecule: running_processes
+        concentration: 0
+      - molecule: outs_devs_n
+        concentration: 0
+      - molecule: ins_devs_n
+        concentration: 0
+      - molecule: outs_timeout_n
+        concentration: 0
+      - molecule: ins_timeout_n
+        concentration: 0
+      - molecule: outWindow
+        concentration: *outWindow
+      - molecule: outExpThreshold
+        concentration: *outExpThreshold
+      - molecule: inWindow
+        concentration: *inWindow
+      - molecule: inExpThreshold
+        concentration: *inExpThreshold
+      - molecule: maxExtension
+        concentration: *maxExtension
+      - molecule: opTimeout
+        concentration: *opTimeout
+      - molecule: failureProb
+        concentration: *failureProb
+  # VICTIMS
+  - in:
+      type: SpecificPositions
+      parameters: [ [400,100], [600,-40], [800,160], [820,-190]]
+    programs:
+      #- *move
+      - *program
+    contents:
+      - molecule: obstacle
+        concentration: 0
+      - molecule: victim
+        concentration: 1
+      - molecule: explorer
+        concentration: 0
+      - molecule: outs_n
+        concentration: 0
+      - molecule: outs_closed_n
+        concentration: 0
+      - molecule: ins_n
+        concentration: 0
+      - molecule: ins_unblocked_n
+        concentration: 0
+      - molecule: running_processes
+        concentration: 0
+      - molecule: outs_devs_n
+        concentration: 0
+      - molecule: ins_devs_n
+        concentration: 0
+      - molecule: outs_timeout_n
+        concentration: 0
+      - molecule: ins_timeout_n
+        concentration: 0
+      - molecule: outWindow
+        concentration: *outWindow
+      - molecule: outExpThreshold
+        concentration: *outExpThreshold
+      - molecule: inWindow
+        concentration: *inWindow
+      - molecule: inExpThreshold
+        concentration: *inExpThreshold
+      - molecule: maxExtension
+        concentration: *maxExtension
+      - molecule: opTimeout
+        concentration: *opTimeout
+      - molecule: failureProb
+        concentration: *failureProb
+  # OBSTACLES
+  - in:
+      type: SpecificPositions
+      parameters: [ [380,100], [470,-20], [700,100], [720,-160], [400,10], [200,-30]]
+    programs:
+      - *program
+    contents:
+      - molecule: obstacle
+        concentration: 1
+      - molecule: victim
+        concentration: 0
+      - molecule: explorer
+        concentration: 0
+      - molecule: outs_n
+        concentration: 0
+      - molecule: outs_closed_n
+        concentration: 0
+      - molecule: ins_n
+        concentration: 0
+      - molecule: ins_unblocked_n
+        concentration: 0
+      - molecule: running_processes
+        concentration: 0
+      - molecule: outs_devs_n
+        concentration: 0
+      - molecule: ins_devs_n
+        concentration: 0
+      - molecule: outs_timeout_n
+        concentration: 0
+      - molecule: ins_timeout_n
+        concentration: 0
+      - molecule: outWindow
+        concentration: *outWindow
+      - molecule: outExpThreshold
+        concentration: *outExpThreshold
+      - molecule: inWindow
+        concentration: *inWindow
+      - molecule: inExpThreshold
+        concentration: *inExpThreshold
+      - molecule: maxExtension
+        concentration: *maxExtension
+      - molecule: opTimeout
+        concentration: *opTimeout
+      - molecule: failureProb
+        concentration: *failureProb

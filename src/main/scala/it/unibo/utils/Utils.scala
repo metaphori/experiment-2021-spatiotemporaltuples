@@ -16,6 +16,9 @@ trait Utils extends BlockG with BlockC { self: AggregateProgram with ScafiAlchem
   def gossip[V](source: Boolean, field: V): V =
     G[V](source, field, v => v, nbrRange _)
 
+  def gossipBy[V](value: V, op: (V,V) => V): V =
+    rep(value)(o => includingSelf.foldhoodTemplate(value)(op)(nbr { o }))
+
   def consensusOn[T](data: Option[T], leader: Boolean, potential: Double): Boolean = {
     val collect = C[Double,Set[T]](potential, _++_, data.toSet, Set.empty)
     val choice = rep[Option[T]](None){ v => v.orElse(collect.headOption) }
