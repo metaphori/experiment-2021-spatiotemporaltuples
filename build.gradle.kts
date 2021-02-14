@@ -124,20 +124,20 @@ fun makeTest(
         debug: Boolean = false,
         effects: String? = null
 ) {
-    val heap: Long = maxHeap ?: if (System.getProperty("os.name").toLowerCase().contains("linux")) {
-        ByteArrayOutputStream()
-                .use { output ->
-                    exec {
-                        executable = "bash"
-                        args = listOf("-c", "cat /proc/meminfo | grep MemAvailable | grep -o '[0-9]*'")
-                        standardOutput = output
-                    }
-                    output.toString().trim().toLong() / 1024
-                }
-                .also { println("Detected ${it}MB RAM available.") }  * 9 / 10
+    val heap = if(threads != null) { threads*taskSize } else { maxHeap ?: if (System.getProperty("os.name").toLowerCase().contains("linux")) {
+        ByteArrayOutputStream().use { output ->
+            exec {
+                executable = "bash"
+                args = listOf("-c", "cat /proc/meminfo | grep MemAvailable | grep -o '[0-9]*'")
+                standardOutput = output
+            }
+            output.toString().trim().toLong() / 1024
+        }
+                .also { println("Detected ${it}MB RAM available.") }  * 7 / 10
     } else {
-        // Guess 10GB RAM of which 2 used by the OS
-        10 * 1024L
+        // Guess 16GB RAM of which 2 used by the OS
+        14 * 1024L
+    }
     }
 
     val threadCount = threads ?: maxOf(1, minOf(Runtime.getRuntime().availableProcessors(), heap.toInt() / taskSize ))
@@ -182,8 +182,9 @@ fun makeTest(
 
 makeTest(name="hello", file = "hello_scafi", time = 100.0, vars = setOf("random"), taskSize = 2800)
 makeTest(name="procs", file = "test_aggregate_processes", time = 120.0, vars = setOf("random"), taskSize = 1500)
-makeTest(name="tuples", file = "spatialtuples", time = 250.0, vars = setOf("random"), taskSize = 1500)
-makeTest(name="moving", file = "spatialtuples", time = 250.0, vars = setOf("speed","random"), taskSize = 1500)
+makeTest(name="tuples", file = "spatialtuples", time = 300.0, vars = setOf("random"), taskSize = 1500)
+makeTest(name="moving", file = "spatialtuples", time = 250.0, vars = setOf("speed","random"), taskSize = 1500, threads = 30)
+makeTest(name="moreins", file = "spatialtuples", time = 300.0, vars = setOf("moreINs","speed","random"), taskSize = 1500, threads = 30)
 makeTest(name="st", file = "spatialtuples", time = 100.0, taskSize = 1500, effects="src/main/resources/spatialtuples.aes")
 
 

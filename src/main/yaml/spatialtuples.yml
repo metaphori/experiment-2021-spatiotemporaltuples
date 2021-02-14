@@ -1,7 +1,7 @@
 variables:
   random: &random
     min: 0
-    max: 2
+    max: 99
     step: 1
     default: 0
   range: &range
@@ -9,9 +9,14 @@ variables:
   outWindow: &outWindow
     language: scala
     formula: (0.0, 30.0)
+  moreINs: &moreINs
+    type: ArbitraryVariable
+    parameters: [0, [1]]
+  endingTimeIN: &endingTimeIN
+    formula: if(moreINs>0) 35.0 else 25.0
   inWindow: &inWindow
     language: scala
-    formula: (0.0, 30.0)
+    formula: (0.0, endingTimeIN)
   outExpThreshold: &outExpThreshold # of an exponential rate
     formula: 6.2
   inExpThreshold: &inExpThreshold
@@ -19,13 +24,13 @@ variables:
   maxExtension: &maxExtension
     formula: 200.0
   opTimeout: &opTimeout
-    formula: 200.0
+    formula: 250.0
   moveFrequency: &moveFrequency
     formula: 2.0 # move once every 2.0 seconds
   speed: &speed
     min: 0.0
     max: 50.0
-    step: 10.0
+    step: 40.0
     default: 0.0
   failureProb: &failureProb
     formula: 0.005 # 0.5%
