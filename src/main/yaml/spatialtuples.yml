@@ -8,12 +8,12 @@ variables:
     formula: 100
   outWindow: &outWindow
     language: scala
-    formula: (0.0, 30.0)
+    formula: (0.0, 25.0)
   moreINs: &moreINs
     type: ArbitraryVariable
     parameters: [0, [1]]
   endingTimeIN: &endingTimeIN
-    formula: if(moreINs>0) 35.0 else 25.0
+    formula: if(moreINs>0) 30.0 else 20.0
   inWindow: &inWindow
     language: scala
     formula: (0.0, endingTimeIN)
@@ -24,7 +24,7 @@ variables:
   maxExtension: &maxExtension
     formula: 200.0
   opTimeout: &opTimeout
-    formula: 250.0
+    formula: 350.0
   moveFrequency: &moveFrequency
     formula: 2.0 # move once every 2.0 seconds
   speed: &speed

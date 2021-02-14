@@ -13,7 +13,7 @@ the_plots_labels:
   - '# in timeouts'
 the_plots_formats:
   - [0,1,2,3,4,7,8,6,9,10]
-  - [0,1,2,3,4,7,8,6,9,10]
+#  - [0,1,2,3,4,7,8,6,9,10]
 #y_labels: ['# of requests', '# of requests','','% of utilization of workers']
 #file_suffixes:
 #  - errors
@@ -50,8 +50,8 @@ hlines:
 vlines:
   0: [[30, { linestyle: ':' , color: 'red'}]]
 sampling:
-  0: false
-  1: true
+  0: true
+#  1: false
 format: 'png'
 
 #title_prefix: ''
