@@ -12,6 +12,6 @@ $ docker build -t metaphori/tuples:v0 . && docker push metaphori/tuples:v0
 # 2. Launch tasks on k8s cluster, e.g., 'moving' and 'moreins'
 $ ./kube-launch-task.sh tpl-moving metaphori/tuples:v0 "./gradlew moving" . 30d
 # 3. Monitor tasks, e.g.
-$ kubectl exec optc-speed -- ls -l /optc/data/raw/
+$ kubectl exec tpl-moving -- ls -l /tuples/data/
 # 4. When done, retrieve data
-$ kubectl cp optc-hops:/optc/data/raw/ analysis-isolation-test/ # i.e., pod:remote/path local/path
+$ kubectl cp tpl-moving:/tuples/data/ data/ # i.e., pod:remote/path local/path
