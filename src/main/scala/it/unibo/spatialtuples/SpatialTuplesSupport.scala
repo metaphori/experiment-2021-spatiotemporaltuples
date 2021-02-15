@@ -72,7 +72,7 @@ trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC
   }
 
   def handleRemovalByIN(toid: TupleOpId, s: Tuple, potential: Double, arg: ProcArg): (Set[TupleOpEvent], Boolean) = {
-    val owner = toid.op.initiator == toid.op.initiator
+    val owner = mid() == toid.op.initiator
     val events = arg.flatMap(_._2.events).toSet
 
     val (newPhase,newEvents) = rep[(OutPhase,Set[TupleOpEvent])]((OutPhase.Normal, Set.empty)) { case (currPhase, _) => {
