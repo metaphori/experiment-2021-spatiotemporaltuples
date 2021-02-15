@@ -1,7 +1,7 @@
 variables:
   random: &random
     min: 0
-    max: 99
+    max: 49
     step: 1
     default: 0
   range: &range
@@ -13,14 +13,14 @@ variables:
     type: ArbitraryVariable
     parameters: [0, [1]]
   endingTimeIN: &endingTimeIN
-    formula: if(moreINs>0) 30.0 else 20.0
+    formula: if(moreINs>0) 35.0 else 15.0
   inWindow: &inWindow
     language: scala
     formula: (0.0, endingTimeIN)
   outExpThreshold: &outExpThreshold # of an exponential rate
     formula: 6.2
   inExpThreshold: &inExpThreshold
-    formula: 6.2
+    formula: if(moreINs>0) 6.15 else 6.2
   maxExtension: &maxExtension
     formula: 200.0
   opTimeout: &opTimeout
@@ -36,7 +36,7 @@ variables:
     formula: 0.005 # 0.5%
 
 export:
-  - time
+  - time #0
   - molecule: outs_n # number of OUTs issued [over time]
     aggregators: [sum]
     value-filter: FilterNaN
@@ -49,7 +49,7 @@ export:
   - molecule: ins_unblocked_n # number of INs closed [over time] (no device is running any one of them)
     aggregators: [sum]
     value-filter: FilterNaN
-  - molecule: running_processes # number of devices running any tuple operation [per time instant]
+  - molecule: running_processes #5,6 # number of devices running any tuple operation [per time instant]
     aggregators: [sum,mean]
     value-filter: FilterNaN
   - molecule: outs_devs_n # number of OUT initiators [per time instant]
@@ -61,7 +61,25 @@ export:
   - molecule: outs_timeout_n # number of IN initiators [per time instant]
     aggregators: [sum]
     value-filter: FilterNaN
-  - molecule: ins_timeout_n # number of IN initiators [per time instant]
+  - molecule: ins_timeout_n  # 10 # number of IN initiators [per time instant]
+    aggregators: [sum]
+    value-filter: FilterNaN
+  - molecule: outs_phase1
+    aggregators: [sum]
+    value-filter: FilterNaN
+  - molecule: outs_phase2
+    aggregators: [sum]
+    value-filter: FilterNaN
+  - molecule: outs_phase3
+    aggregators: [sum]
+    value-filter: FilterNaN
+  - molecule: ins_phase1
+    aggregators: [sum]
+    value-filter: FilterNaN
+  - molecule: ins_phase2 # 15
+    aggregators: [sum]
+    value-filter: FilterNaN
+  - molecule: ins_phase3
     aggregators: [sum]
     value-filter: FilterNaN
 
@@ -81,7 +99,7 @@ network-model:
 
 pools:
   - pool: &program
-      - time-distribution: # 1
+      - time-distribution: #1
           type: ExponentialTime
           parameters: [ 1.0 ] # lambda (mean freq)
         type: Event
@@ -98,7 +116,9 @@ pools:
           - type: RunScafiProgram
             parameters: [it.unibo.spatialtuples.TaskGenerator, 5.0] # second argument is retention time
   - pool: &move
-      - time-distribution: *moveFrequency
+      - time-distribution:
+          type: DiracComb
+          parameters: [5.0, *moveFrequency] # start at time=5, and perform 0.5 events per time unit
         type: Event
         actions:
           - type: MoveToTarget
@@ -145,3 +165,15 @@ displacements:
         concentration: *opTimeout
       - molecule: failureProb
         concentration: *failureProb
+      - molecule: outs_phase1
+        concentration: 0
+      - molecule: outs_phase2
+        concentration: 0
+      - molecule: outs_phase3
+        concentration: 0
+      - molecule: ins_phase1
+        concentration: 0
+      - molecule: ins_phase2
+        concentration: 0
+      - molecule: ins_phase3
+        concentration: 0

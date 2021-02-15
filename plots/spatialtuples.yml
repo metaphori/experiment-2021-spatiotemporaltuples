@@ -5,22 +5,30 @@ the_plots_labels:
   - '# outs closed'
   - '# ins'
   - '# ins unblocked'
-  - 'num processes'
+  - 'num processes' #5
   - 'mean processes/dev'
   - '# out initiators'
   - '# in initiators'
   - '# out timeouts'
-  - '# in timeouts'
+  - '# in timeouts' #10
+  - '# out phase1'
+  - '# out phase2'
+  - '# out phase3'
+  - '# in phase1'
+  - '# in phase2' #15
+  - '# in phase3'
 the_plots_formats:
   - [0,1,2,3,4,7,8,6,9,10]
+  - [0,11,12,13,14,15,16]
 #  - [0,1,2,3,4,7,8,6,9,10]
 #y_labels: ['# of requests', '# of requests','','% of utilization of workers']
 #file_suffixes:
 #  - errors
 line_widths:
-  - [2,2,2,2,2,2,2,2,2,2,2]
+  - [2,2,2,2,2,  2,2,2,2,2,  2,2,2,2,2,  2]
 default_colors: &default_colors ["black", "cyan", "orange","red","yellow","magenta","green",
-                                 "black", "blue","brown", "darkgray", "lightgray"]
+                                 "black", "blue","brown", "darkgray", "lightgray",
+                                 "cyan", "orange","red","yellow","magenta"]
 the_plots_colors:
   - *default_colors
 legend_position:
@@ -34,7 +42,7 @@ legend_columns:
   - 4
 legend_size: 8
 export_legend:
-  0: true
+#  0: true
 force_limit_plot_y:
 #  1: 140
 #   3: 1000
@@ -49,8 +57,10 @@ hlines:
   #0: [[10, { linestyle: '--' }]]
 vlines:
   0: [[30, { linestyle: ':' , color: 'red'}]]
+  1: [[30, { linestyle: ':' , color: 'red'}]]
 sampling:
   0: true
+  1: true
 #  1: false
 format: 'png'
 

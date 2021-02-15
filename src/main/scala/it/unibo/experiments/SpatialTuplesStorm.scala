@@ -22,6 +22,12 @@ class SpatialTuplesStorm extends AggregateProgram with StandardSensors with Cust
     node.put(Exports.RUNNING_PROCESSES, 0)
     node.put(Exports.NUM_IN_INITIATORS, 0)
     node.put(Exports.NUM_OUT_INITIATORS, 0)
+    node.put(Exports.NUM_INS_PHASE1, 0)
+    node.put(Exports.NUM_INS_PHASE2, 0)
+    node.put(Exports.NUM_INS_PHASE3, 0)
+    node.put(Exports.NUM_OUTS_PHASE1, 0)
+    node.put(Exports.NUM_OUTS_PHASE2, 0)
+    node.put(Exports.NUM_OUTS_PHASE3, 0)
   }
 
   def initialiseEffects() = {
@@ -108,6 +114,12 @@ object SpatialTuplesStorm {
     val RUNNING_PROCESSES = "running_processes"
     val NUM_OUTS_TIMEOUT = "outs_timeout_n"
     val NUM_INS_TIMEOUT = "ins_timeout_n"
+    val NUM_OUTS_PHASE1 = "outs_phase1"
+    val NUM_OUTS_PHASE2 = "outs_phase2"
+    val NUM_OUTS_PHASE3 = "outs_phase3"
+    val NUM_INS_PHASE1 = "ins_phase1"
+    val NUM_INS_PHASE2 = "ins_phase2"
+    val NUM_INS_PHASE3 = "ins_phase3"
   }
   object Molecules {
     val OP_TIMEOUT: String = "opTimeout"
