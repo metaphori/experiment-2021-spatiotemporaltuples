@@ -1,7 +1,14 @@
 package it.unibo.utils
 
+import java.util.Optional
+
+import it.unibo.alchemist.model.implementations.layers.UniformLayer
+import it.unibo.alchemist.model.implementations.molecules.SimpleMolecule
 import it.unibo.alchemist.model.implementations.nodes.NodeManager
+import it.unibo.alchemist.model.interfaces.{Layer, Position}
 import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
+
+import scala.util.{Success, Try}
 
 trait Utils extends BlockG with BlockC { self: AggregateProgram with ScafiAlchemistSupport with StandardSensors =>
 
@@ -87,5 +94,29 @@ trait Utils extends BlockG with BlockC { self: AggregateProgram with ScafiAlchem
       if(!node.has(name)) 0 else node.get[Set[Any]](name).size
 
     def getOption[T](name: String): Option[T] = if(node.has(name)) Some(node.get[T](name)) else None
+  }
+
+  private implicit def optionalToOption[E](p : Optional[E]) : Option[E] = if (p.isPresent) Some(p.get()) else None
+
+  private def findInLayers[A](name : String) : Option[A] = {
+    val layer : Option[Layer[Any, Position[_]]] = alchemistEnvironment.getLayer(new SimpleMolecule(name))
+    layer.map(_.getValue(alchemistEnvironment.getPosition(alchemistEnvironment.getNodeByID(mid())))).map(_.asInstanceOf[A])
+    /*
+        val layer : Option[Layer[Any, Position[_]]] = alchemistEnvironment.getLayer(new SimpleMolecule(name))
+    val node = alchemistEnvironment.getNodeByID(mid())
+    layer.map(l => l.getValue(alchemistEnvironment.getPosition(node)))
+      .map(value => Try(value.asInstanceOf[A]))
+      .collect { case Success(value) => value }
+     */
+  }
+
+  def senseEnvData[A](name: String): A = {
+    findInLayers[A](name).get
+  }
+
+
+  def changeEnvData[A](name: String, value: A): Unit = {
+    val layer: UniformLayer[A,_] = alchemistEnvironment.getLayer(new SimpleMolecule(name)).get().asInstanceOf[UniformLayer[A,_]]
+    layer.setValue(value)
   }
 }

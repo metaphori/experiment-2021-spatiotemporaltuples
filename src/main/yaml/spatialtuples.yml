@@ -1,30 +1,32 @@
 variables:
   random: &random
     min: 0
-    max: 49
+    max: 99
     step: 1
     default: 0
   range: &range
     formula: 100
   outWindow: &outWindow
     language: scala
-    formula: (0.0, 25.0)
+    formula: (0.0, 30.0)
   moreINs: &moreINs
     type: ArbitraryVariable
     parameters: [0, [1]]
+#  maxINs: &maxINs
+#    formula: if(moreINs>0) 40 else 20
   endingTimeIN: &endingTimeIN
-    formula: if(moreINs>0) 35.0 else 15.0
+    formula: if(moreINs>0) 45.0 else 15.0
   inWindow: &inWindow
     language: scala
-    formula: (0.0, endingTimeIN)
+    formula: (0.0, 20.0)
   outExpThreshold: &outExpThreshold # of an exponential rate
     formula: 6.2
   inExpThreshold: &inExpThreshold
-    formula: if(moreINs>0) 6.15 else 6.2
+    formula: 6.2
   maxExtension: &maxExtension
     formula: 200.0
   opTimeout: &opTimeout
-    formula: 350.0
+    formula: 420.0
   moveFrequency: &moveFrequency
     formula: 2.0 # move once every 2.0 seconds
   speed: &speed
@@ -34,6 +36,16 @@ variables:
     default: 0.0
   failureProb: &failureProb
     formula: 0.005 # 0.5%
+  exhaustingTime: &exhaustingTime
+    formula: 250
+
+layers:
+  - type: it.unibo.alchemist.model.implementations.layers.UniformLayer
+    molecule: max_ins
+    parameters: [ 30 ]
+  - type: it.unibo.alchemist.model.implementations.layers.UniformLayer
+    molecule: max_outs
+    parameters: [ 30 ]
 
 export:
   - time #0
@@ -177,3 +189,7 @@ displacements:
         concentration: 0
       - molecule: ins_phase3
         concentration: 0
+      - molecule: moreINs
+        concentration: *moreINs
+      - molecule: exhaustingTime
+        concentration: *exhaustingTime

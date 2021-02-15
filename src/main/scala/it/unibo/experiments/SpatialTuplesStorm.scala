@@ -85,16 +85,22 @@ class SpatialTuplesStorm extends AggregateProgram with StandardSensors with Cust
     val maxExt = node.get[Double](Molecules.MAX_EXTENSION)
     val (oFrom,oTo) = node.get[(Double,Double)](Molecules.OUT_WINDOW)
     val (iFrom,iTo) = node.get[(Double,Double)](Molecules.IN_WINDOW)
+    val stillTodoINs = senseEnvData[Int](Molecules.MAX_INS)
+    val stillTodoOUTs = senseEnvData[Int](Molecules.MAX_OUTS)
+    val moreINsThanOUTs = node.get[Int](Molecules.MORE_INS_THAN_OUTS) > 0
+    val exhaustingTime = node.get[Int](Molecules.EXHAUSTING_TIME)
     val (oTh, iTh) = (node.get[Double](Molecules.OUT_EXP_THRES), node.get[Double](Molecules.OUT_EXP_THRES))
     val templates = Array("a") // ,"b","c")
-    val outs = if(T > oFrom && T < oTo && expDistibution.sample() > oTh){
+    val outs = if((T > oFrom && T < oTo && expDistibution.sample() > oTh) || (T >= exhaustingTime && !moreINsThanOUTs && stillTodoOUTs>stillTodoINs)){
       inc(Exports.NUM_OUTS)
+      changeEnvData(Molecules.MAX_OUTS, stillTodoOUTs-1)
       //println(s"[t=$T] node ${mid()} generating an OUT")
       Set(TupleOpId(s"${T}_${mid()}_out")(OutMe(s"${templates(((templates.size-1)*nextRandom()).round.toInt)}(${(nextRandom()*100).round})", mid(), 500.0),
         alchemistTimestamp.toDouble, node.getOrElse(Molecules.OP_TIMEOUT, 200)))
     } else { Set.empty }
-    val ins = if(T > iFrom && T < iTo && expDistibution.sample() > iTh){
+    val ins = if((T > iFrom && T < iTo && expDistibution.sample() > iTh) || (T >= exhaustingTime && moreINsThanOUTs && stillTodoINs>stillTodoOUTs)){
       inc(Exports.NUM_INS)
+      changeEnvData(Molecules.MAX_INS, stillTodoINs-1)
       //println(s"[thread=${Thread.currentThread()}][t=$T] node ${mid()} generating an IN")
       Set(TupleOpId(s"${T}_${mid()}_in")(In(s"${templates(((templates.size-1)*nextRandom()).round.toInt)}(X)", mid(), 500.0),
         alchemistTimestamp.toDouble, node.getOrElse(Molecules.OP_TIMEOUT, 200)))
@@ -122,6 +128,8 @@ object SpatialTuplesStorm {
     val NUM_INS_PHASE3 = "ins_phase3"
   }
   object Molecules {
+    val MAX_INS: String = "max_ins"
+    val MAX_OUTS: String = "max_outs"
     val OP_TIMEOUT: String = "opTimeout"
     val MAX_EXTENSION: String = "maxExtension"
     val PROCS = "procs"
@@ -133,6 +141,8 @@ object SpatialTuplesStorm {
     val INS_CLOSED = "closed_ins"
     val INS_TIMEOUT: String = "timeout_ins"
     val OUTS_TIMEOUT: String = "timeout_outs"
+    val MORE_INS_THAN_OUTS = "moreINs"
+    val EXHAUSTING_TIME = "exhaustingTime"
   }
   object Effects {
     val OUT_PHASE = "out_phase"
