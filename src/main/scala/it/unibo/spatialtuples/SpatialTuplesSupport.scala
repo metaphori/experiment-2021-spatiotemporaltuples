@@ -58,7 +58,6 @@ trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC
 
   def outResultInRegion(toid: TupleOpId, owner: Boolean, s: Tuple, inRegion: Boolean, potential: Double, arg: ProcArg) = {
     node.put(Effects.DOING_OUT, true)
-    node.put(Effects.INITIATOR, owner)
     if(owner){ inc(Exports.NUM_OUT_INITIATORS) }
     val timeout = branch(owner){ rep(0L)(_+deltaTime().toMillis)/1000.0 > toid.timeout } { false }
     val (events, terminate) = branch(inRegion){ handleRemovalByIN(toid, s, potential, arg) }{ (Set.empty, false) }
@@ -72,7 +71,9 @@ trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC
   }
 
   def handleRemovalByIN(toid: TupleOpId, s: Tuple, potential: Double, arg: ProcArg): (Set[TupleOpEvent], Boolean) = {
+    node.put(Effects.LEADER_OUT_PROC, Math.max(node.getOrElse(Effects.LEADER_OUT_PROC, -1), toid.op.initiator))
     val owner = mid() == toid.op.initiator
+    if(owner){ node.put(Effects.INITIATOR, true) }
     val events = arg.flatMap(_._2.events).toSet
 
     val (newPhase,newEvents) = rep[(OutPhase,Set[TupleOpEvent])]((OutPhase.Normal, Set.empty)) { case (currPhase, _) => {
@@ -124,7 +125,7 @@ trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC
 
   def ReadLogic(toid: TupleOpId, readOp: Read, arg: ProcArg): (TupleOpResult, Status) = {
     node.put(Effects.DOING_READ, true)
-    node.put(Effects.INITIATOR, toid.op.initiator == mid())
+    if(toid.op.initiator == mid()){ node.put(Effects.INITIATOR, true) }
     val Read(tupleTemplate, initiator, extension) = readOp
     val g = classicGradient(initiator==mid())
     // TODO: should exclude OUTs which reserved their tuple to some IN
@@ -139,7 +140,8 @@ trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC
 
   def InLogic(toid: TupleOpId, inOp: In, arg: ProcArg): (TupleOpResult, Status) = {
     node.put(Effects.DOING_IN, true)
-    node.put(Effects.INITIATOR, toid.op.initiator == mid())
+    if(toid.op.initiator == mid()){ node.put(Effects.INITIATOR, true) }
+    node.put(Effects.LEADER_IN_PROC, Math.max(node.getOrElse(Effects.LEADER_IN_PROC, -1), toid.op.initiator))
     if(toid.op.initiator == mid()){ inc(Exports.NUM_IN_INITIATORS) }
     val In(ttemplate, initiator, extension) = inOp
     val owner = mid()==initiator

@@ -66,7 +66,7 @@ def process_file(filepath):
   fh = open(filepath, "r")
   
   # Deduce some info from file name
-  parts = re.findall('_+([^-]+)-(\d+\.\d+)', filepath.replace(join(basedir,basefn),''))
+  parts = re.findall('_+([^-]+)-(\d+\.?\d*)', filepath.replace(join(basedir,basefn),''))
   parts = map(lambda p: (p[0],format(float(p[1]),'.6f').rstrip('0')), parts)
   parts = tuple(parts) # this must be hashable (and lists are not)
   print("Dimensions: " + "; ".join(map(lambda x: str(x), parts)))

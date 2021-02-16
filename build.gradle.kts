@@ -186,9 +186,9 @@ fun makeTest(
 
 makeTest(name="hello", file = "hello_scafi", time = 100.0, vars = setOf("random"), taskSize = 2800)
 makeTest(name="procs", file = "test_aggregate_processes", time = 120.0, vars = setOf("random"), taskSize = 1500)
-makeTest(name="tuples", file = "spatialtuples", time = 300.0, vars = setOf("random"), taskSize = 1500)
+makeTest(name="tuples", file = "spatialtuples", time = 500.0, vars = setOf("random"), taskSize = 1500)
 makeTest(name="moving", file = "spatialtuples", time = 400.0, vars = setOf("speed","random"), taskSize = 1500)
-makeTest(name="moreins", file = "spatialtuples", time = 400.0, vars = setOf("moreINs","speed","random"), taskSize = 1500)
+makeTest(name="moreins", file = "spatialtuples", time = 500.0, vars = setOf("moreINsInitially","random"), taskSize = 1500) // "speed"
 makeTest(name="st", file = "spatialtuples", time = 100.0, taskSize = 1500, effects="src/main/resources/spatialtuples.aes")
 
 

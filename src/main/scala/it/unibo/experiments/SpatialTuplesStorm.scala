@@ -38,6 +38,9 @@ class SpatialTuplesStorm extends AggregateProgram with StandardSensors with Cust
     node.put(Effects.IN_PHASE2, 0)
     node.put(Effects.OUT_PHASE, 0)
     node.put(Effects.INITIATOR, false)
+    node.put(Effects.LEADER_OUT_PROC, -1)
+    node.put(Effects.LEADER_IN_PROC, -1)
+
   }
 
   override def main(): Any = {
@@ -87,18 +90,27 @@ class SpatialTuplesStorm extends AggregateProgram with StandardSensors with Cust
     val (iFrom,iTo) = node.get[(Double,Double)](Molecules.IN_WINDOW)
     val stillTodoINs = senseEnvData[Int](Molecules.MAX_INS)
     val stillTodoOUTs = senseEnvData[Int](Molecules.MAX_OUTS)
-    val moreINsThanOUTs = node.get[Int](Molecules.MORE_INS_THAN_OUTS) > 0
+    val breakevenNumber = node.get[Int](Molecules.BREAKEVEN_NUMBER)
+    val initiallyMoreINsThanOUTs = node.get[Int](Molecules.MORE_INS_THAN_OUTS_INITIALLY) > 0
     val exhaustingTime = node.get[Int](Molecules.EXHAUSTING_TIME)
+    val surpassingTime = node.get[Int](Molecules.SURPASSING_TIME)
+    val surpassingNumber = node.get[Int](Molecules.SURPASSING_NUMBER)
     val (oTh, iTh) = (node.get[Double](Molecules.OUT_EXP_THRES), node.get[Double](Molecules.OUT_EXP_THRES))
     val templates = Array("a") // ,"b","c")
-    val outs = if((T > oFrom && T < oTo && expDistibution.sample() > oTh) || (T >= exhaustingTime && !moreINsThanOUTs && stillTodoOUTs>stillTodoINs)){
+    val outs = if((T > oFrom && T < oTo && expDistibution.sample() > oTh && stillTodoOUTs>0)
+      || (T > oTo && stillTodoOUTs>0)
+      || (T >= exhaustingTime && initiallyMoreINsThanOUTs && (stillTodoOUTs+breakevenNumber)>stillTodoINs)
+      || (T >= surpassingTime && initiallyMoreINsThanOUTs && (stillTodoOUTs+breakevenNumber+surpassingNumber)>stillTodoINs)){
       inc(Exports.NUM_OUTS)
       changeEnvData(Molecules.MAX_OUTS, stillTodoOUTs-1)
       //println(s"[t=$T] node ${mid()} generating an OUT")
       Set(TupleOpId(s"${T}_${mid()}_out")(OutMe(s"${templates(((templates.size-1)*nextRandom()).round.toInt)}(${(nextRandom()*100).round})", mid(), 500.0),
         alchemistTimestamp.toDouble, node.getOrElse(Molecules.OP_TIMEOUT, 200)))
     } else { Set.empty }
-    val ins = if((T > iFrom && T < iTo && expDistibution.sample() > iTh) || (T >= exhaustingTime && moreINsThanOUTs && stillTodoINs>stillTodoOUTs)){
+    val ins = if((T > iFrom && T < iTo && expDistibution.sample() > iTh && stillTodoINs>0)
+      || (T > iTo && stillTodoINs>0)
+      || (T >= exhaustingTime && !initiallyMoreINsThanOUTs && (stillTodoINs+breakevenNumber)>stillTodoOUTs)
+      || (T >= surpassingTime && !initiallyMoreINsThanOUTs && (stillTodoINs+breakevenNumber+surpassingNumber)>stillTodoOUTs)){
       inc(Exports.NUM_INS)
       changeEnvData(Molecules.MAX_INS, stillTodoINs-1)
       //println(s"[thread=${Thread.currentThread()}][t=$T] node ${mid()} generating an IN")
@@ -128,6 +140,9 @@ object SpatialTuplesStorm {
     val NUM_INS_PHASE3 = "ins_phase3"
   }
   object Molecules {
+    val SURPASSING_NUMBER: String = "surpassing_number"
+    val BREAKEVEN_NUMBER: String = "breakeven_number"
+    val SURPASSING_TIME: String = "surpassingTime"
     val MAX_INS: String = "max_ins"
     val MAX_OUTS: String = "max_outs"
     val OP_TIMEOUT: String = "opTimeout"
@@ -141,7 +156,7 @@ object SpatialTuplesStorm {
     val INS_CLOSED = "closed_ins"
     val INS_TIMEOUT: String = "timeout_ins"
     val OUTS_TIMEOUT: String = "timeout_outs"
-    val MORE_INS_THAN_OUTS = "moreINs"
+    val MORE_INS_THAN_OUTS_INITIALLY = "moreINsInitially"
     val EXHAUSTING_TIME = "exhaustingTime"
   }
   object Effects {
@@ -152,5 +167,7 @@ object SpatialTuplesStorm {
     val DOING_IN = "doing_in"
     val DOING_READ = "doing_read"
     val INITIATOR = "initiator"
+    val LEADER_IN_PROC = "leader_in_proc"
+    val LEADER_OUT_PROC = "leader_out_proc"
   }
 }
