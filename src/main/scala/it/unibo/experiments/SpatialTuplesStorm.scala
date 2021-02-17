@@ -28,6 +28,8 @@ class SpatialTuplesStorm extends AggregateProgram with StandardSensors with Cust
     node.put(Exports.NUM_OUTS_PHASE1, 0)
     node.put(Exports.NUM_OUTS_PHASE2, 0)
     node.put(Exports.NUM_OUTS_PHASE3, 0)
+    node.put(Exports.LIFETIME, Double.NaN)
+    node.put(Exports.DOING_IN_AND_OUT, false)
   }
 
   def initialiseEffects() = {
@@ -40,7 +42,6 @@ class SpatialTuplesStorm extends AggregateProgram with StandardSensors with Cust
     node.put(Effects.INITIATOR, false)
     node.put(Effects.LEADER_OUT_PROC, -1)
     node.put(Effects.LEADER_IN_PROC, -1)
-
   }
 
   override def main(): Any = {
@@ -61,6 +62,7 @@ class SpatialTuplesStorm extends AggregateProgram with StandardSensors with Cust
     node.put(Exports.NUM_INS_CLOSED, node.getOrElse[Set[TupleOpId]](Molecules.INS_CLOSED, Set.empty).size)
     node.put(Exports.NUM_OUTS_TIMEOUT, node.getOrElse[Set[TupleOpId]](Molecules.OUTS_TIMEOUT, Set.empty).size)
     node.put(Exports.NUM_INS_TIMEOUT, node.getOrElse[Set[TupleOpId]](Molecules.INS_TIMEOUT, Set.empty).size)
+    node.put(Exports.DOING_IN_AND_OUT, node.getOrElse(Effects.DOING_IN, false) && node.getOrElse(Effects.DOING_OUT, false))
   }
 
   /**
@@ -94,6 +96,7 @@ class SpatialTuplesStorm extends AggregateProgram with StandardSensors with Cust
     val initiallyMoreINsThanOUTs = node.get[Int](Molecules.MORE_INS_THAN_OUTS_INITIALLY) > 0
     val exhaustingTime = node.get[Int](Molecules.EXHAUSTING_TIME)
     val surpassingTime = node.get[Int](Molecules.SURPASSING_TIME)
+    val extension = node.getOrElse[Int](Molecules.OP_EXTENSION, 700)
     val surpassingNumber = node.get[Int](Molecules.SURPASSING_NUMBER)
     val (oTh, iTh) = (node.get[Double](Molecules.OUT_EXP_THRES), node.get[Double](Molecules.OUT_EXP_THRES))
     val templates = Array("a") // ,"b","c")
@@ -104,7 +107,7 @@ class SpatialTuplesStorm extends AggregateProgram with StandardSensors with Cust
       inc(Exports.NUM_OUTS)
       changeEnvData(Molecules.MAX_OUTS, stillTodoOUTs-1)
       //println(s"[t=$T] node ${mid()} generating an OUT")
-      Set(TupleOpId(s"${T}_${mid()}_out")(OutMe(s"${templates(((templates.size-1)*nextRandom()).round.toInt)}(${(nextRandom()*100).round})", mid(), 500.0),
+      Set(TupleOpId(s"${T}_${mid()}_out")(OutMe(s"${templates(((templates.size-1)*nextRandom()).round.toInt)}(${(nextRandom()*100).round})", mid(), extension),
         alchemistTimestamp.toDouble, node.getOrElse(Molecules.OP_TIMEOUT, 200)))
     } else { Set.empty }
     val ins = if((T > iFrom && T < iTo && expDistibution.sample() > iTh && stillTodoINs>0)
@@ -114,7 +117,7 @@ class SpatialTuplesStorm extends AggregateProgram with StandardSensors with Cust
       inc(Exports.NUM_INS)
       changeEnvData(Molecules.MAX_INS, stillTodoINs-1)
       //println(s"[thread=${Thread.currentThread()}][t=$T] node ${mid()} generating an IN")
-      Set(TupleOpId(s"${T}_${mid()}_in")(In(s"${templates(((templates.size-1)*nextRandom()).round.toInt)}(X)", mid(), 500.0),
+      Set(TupleOpId(s"${T}_${mid()}_in")(In(s"${templates(((templates.size-1)*nextRandom()).round.toInt)}(X)", mid(), extension),
         alchemistTimestamp.toDouble, node.getOrElse(Molecules.OP_TIMEOUT, 200)))
     } else { Set.empty }
     outs ++ ins
@@ -123,6 +126,8 @@ class SpatialTuplesStorm extends AggregateProgram with StandardSensors with Cust
 
 object SpatialTuplesStorm {
   object Exports {
+    val DOING_IN_AND_OUT: String = "doing_in_and_out"
+    val LIFETIME: String = "lifetime"
     val NUM_OUT_INITIATORS = "outs_devs_n"
     val NUM_IN_INITIATORS = "ins_devs_n"
     val NUM_OUTS = "outs_n"
@@ -140,6 +145,7 @@ object SpatialTuplesStorm {
     val NUM_INS_PHASE3 = "ins_phase3"
   }
   object Molecules {
+    val OP_EXTENSION: String = "op_extension"
     val SURPASSING_NUMBER: String = "surpassing_number"
     val BREAKEVEN_NUMBER: String = "breakeven_number"
     val SURPASSING_TIME: String = "surpassingTime"

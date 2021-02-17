@@ -1,7 +1,7 @@
 variables:
   random: &random
     min: 0
-    max: 1 #99
+    max: 99
     step: 1
     default: 0
   range: &range
@@ -16,7 +16,7 @@ variables:
 #  endingTimeIN: &endingTimeIN
 #    formula: if(moreINsInitially>0) 15.0 else 25.0
   breakeven_number: &breakeven_number
-    formula: java.lang.Math.abs(maxINs-maxOUTs)
+    formula: java.lang.Math.abs(maxINs-maxOUTs)+5
   surpassing_number: &surpassing_number
     formula: 5
   inWindow: &inWindow
@@ -32,7 +32,7 @@ variables:
   maxExtension: &maxExtension
     formula: 200.0
   opTimeout: &opTimeout
-    formula: 360.0
+    formula: 1000.0
   moveFrequency: &moveFrequency
     formula: 2.0 # move once every 2.0 seconds
   speed: &speed
@@ -43,9 +43,11 @@ variables:
   failureProb: &failureProb
     formula: 0.005 # 0.5%
   exhaustingTime: &exhaustingTime
-    formula: 200
+    formula: 300
   surpassingTime: &surpassingTime
-    formula: 400
+    formula: 1000
+  op_extension: &op_extension
+    formula: 700
 
 layers:
   - type: it.unibo.alchemist.model.implementations.layers.UniformLayer
@@ -102,6 +104,19 @@ export:
   - molecule: ins_phase3
     aggregators: [sum]
     value-filter: FilterNaN
+  - molecule: lifetime
+    aggregators: [sum,mean,max]
+    value-filter: FilterNaN
+  - molecule: doing_in
+    aggregators: [sum]
+    value-filter: FilterNaN
+  - molecule: doing_out
+    aggregators: [sum]
+    value-filter: FilterNaN
+  - molecule: doing_in_and_out
+    aggregators: [sum]
+    value-filter: FilterNaN
+
 
 seeds:
   scenario: *random
@@ -207,3 +222,13 @@ displacements:
         concentration: *breakeven_number
       - molecule: surpassing_number
         concentration: *surpassing_number
+      - molecule: lifetime
+        concentration: 0
+      - molecule: op_extension
+        concentration: *op_extension
+      - molecule: doing_in
+        concentration: false
+      - molecule: doing_out
+        concentration: false
+      - molecule: doing_in_and_out
+        concentration: false

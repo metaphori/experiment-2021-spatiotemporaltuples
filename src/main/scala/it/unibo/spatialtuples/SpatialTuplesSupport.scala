@@ -59,7 +59,11 @@ trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC
   def outResultInRegion(toid: TupleOpId, owner: Boolean, s: Tuple, inRegion: Boolean, potential: Double, arg: ProcArg) = {
     node.put(Effects.DOING_OUT, true)
     if(owner){ inc(Exports.NUM_OUT_INITIATORS) }
-    val timeout = branch(owner){ rep(0L)(_+deltaTime().toMillis)/1000.0 > toid.timeout } { false }
+    val timeout = branch(owner){
+      val lifetime = rep(0L)(_+deltaTime().toMillis)/1000.0
+      node.put(Exports.LIFETIME, Math.max(node.get[Double](Exports.LIFETIME), lifetime.toDouble))
+      lifetime > toid.timeout
+    } { false }
     val (events, terminate) = branch(inRegion){ handleRemovalByIN(toid, s, potential, arg) }{ (Set.empty, false) }
     (TupleOpResult(OperationStatus.completed, Some(s), events),
       if(owner && (terminate || timeout)) {
@@ -199,7 +203,11 @@ trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC
       result = None,
       newEvents
     )
-    val timeout = branch(owner){ rep(0L)(_+deltaTime().toMillis)/1000.0 > toid.timeout } { false }
+    val timeout = branch(owner){
+      val lifetime = rep(0L)(_+deltaTime().toMillis)/1000.0
+      node.put(Exports.LIFETIME, Math.max(node.get[Double](Exports.LIFETIME), lifetime.toDouble))
+      lifetime > toid.timeout
+    } { false }
     if(timeout){ extendSet(Molecules.INS_TIMEOUT, toid) }
     val status = if(mid()==initiator && (newPhase.isDone || timeout)) {
       extendSet(Molecules.INS_CLOSED, toid)
