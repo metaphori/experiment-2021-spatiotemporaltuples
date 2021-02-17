@@ -114,9 +114,12 @@ trait Utils extends BlockG with BlockC { self: AggregateProgram with ScafiAlchem
     findInLayers[A](name).get
   }
 
-
   def changeEnvData[A](name: String, value: A): Unit = {
     val layer: UniformLayer[A,_] = alchemistEnvironment.getLayer(new SimpleMolecule(name)).get().asInstanceOf[UniformLayer[A,_]]
     layer.setValue(value)
+  }
+
+  implicit class MyRichDouble(d: Double) {
+    def ifNaN(other: Double) = if(d.isNaN) other else d
   }
 }

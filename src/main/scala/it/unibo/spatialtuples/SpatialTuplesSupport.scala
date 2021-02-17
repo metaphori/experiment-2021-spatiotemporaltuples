@@ -61,7 +61,7 @@ trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC
     if(owner){ inc(Exports.NUM_OUT_INITIATORS) }
     val timeout = branch(owner){
       val lifetime = rep(0L)(_+deltaTime().toMillis)/1000.0
-      node.put(Exports.LIFETIME, Math.max(node.get[Double](Exports.LIFETIME), lifetime.toDouble))
+      node.put(Exports.LIFETIME, Math.max(node.get[Double](Exports.LIFETIME).ifNaN(0), lifetime.toDouble))
       lifetime > toid.timeout
     } { false }
     val (events, terminate) = branch(inRegion){ handleRemovalByIN(toid, s, potential, arg) }{ (Set.empty, false) }
@@ -205,7 +205,7 @@ trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC
     )
     val timeout = branch(owner){
       val lifetime = rep(0L)(_+deltaTime().toMillis)/1000.0
-      node.put(Exports.LIFETIME, Math.max(node.get[Double](Exports.LIFETIME), lifetime.toDouble))
+      node.put(Exports.LIFETIME, Math.max(node.get[Double](Exports.LIFETIME).ifNaN(0), lifetime.toDouble))
       lifetime > toid.timeout
     } { false }
     if(timeout){ extendSet(Molecules.INS_TIMEOUT, toid) }

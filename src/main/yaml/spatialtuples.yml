@@ -107,7 +107,7 @@ export:
   - molecule: lifetime
     aggregators: [sum,mean,max]
     value-filter: FilterNaN
-  - molecule: doing_in
+  - molecule: doing_in # 20
     aggregators: [sum]
     value-filter: FilterNaN
   - molecule: doing_out
