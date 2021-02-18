@@ -1,7 +1,7 @@
 variables:
   random: &random
     min: 0
-    max: 99
+    max: 9
     step: 1
     default: 0
   range: &range
@@ -9,10 +9,13 @@ variables:
   moreINsInitially: &moreINsInitially # more INs than OUTs at the end of the simulation (starting lower)
     type: ArbitraryVariable
     parameters: [0, [0,1]]
+  taskFactor: &taskFactor
+    type: ArbitraryVariable
+    parameters: [ 1, [ 1, 2 ] ]
   maxINs: &maxINs
-    formula: if(moreINsInitially>0) 15 else 10
+    formula: if(moreINsInitially>0) 15*taskFactor else 10*taskFactor
   maxOUTs: &maxOUTs
-    formula: if(moreINsInitially>0) 10 else 15
+    formula: if(moreINsInitially>0) 10*taskFactor else 15*taskFactor
 #  endingTimeIN: &endingTimeIN
 #    formula: if(moreINsInitially>0) 15.0 else 25.0
   breakeven_number: &breakeven_number
@@ -41,7 +44,7 @@ variables:
   speed: &speed
     min: 0.0
     max: 50.0
-    step: 40.0
+    step: 20.0
     default: 0.0
   failureProb: &failureProb
     formula: 0.005 # 0.5%
@@ -50,7 +53,20 @@ variables:
   surpassingTime: &surpassingTime
     formula: 1000
   op_extension: &op_extension
-    formula: 200
+    type: ArbitraryVariable
+    parameters: [ 200, [ 100, 500, 800 ] ]
+  retainTime: &retainTime
+    min: 1.0
+    max: 10.0
+    step: 4.0
+    default: 5.0
+  timeDistrib: &timeDistrib
+    type: ArbitraryVariable
+    parameters: [0, [0,1]]
+  timeDistribClass: &timeDistribClass
+    formula: if(timeDistrib==1) "ExponentialTime" else "DiracComb"
+  timeDistribParams: &timeDistribParams
+    formula: if(timeDistrib==1) [1.0] else [1.0]
 
 layers:
   - type: it.unibo.alchemist.model.implementations.layers.UniformLayer
@@ -138,21 +154,21 @@ network-model:
 pools:
   - pool: &program
       - time-distribution: #1
-          type: DiracComb #ExponentialTime
-          parameters: [ 1.0 ] # lambda (mean freq)
+          type: *timeDistribClass
+          parameters: *timeDistribParams
         type: Event
         actions:
           - type: RunScafiProgram
-            parameters: [it.unibo.experiments.SpatialTuplesStorm, 5.0] # second argument is retention time
+            parameters: [it.unibo.experiments.SpatialTuplesStorm, *retainTime] # second argument is retention time
       - program: send
-  - pool: &taskGenerator
-      - time-distribution:
-          type: ExponentialTime
-          parameters: [1.0] # lambda (mean freq)
-        type: Event
-        actions:
-          - type: RunScafiProgram
-            parameters: [it.unibo.spatialtuples.TaskGenerator, 5.0] # second argument is retention time
+#  - pool: &taskGenerator
+#      - time-distribution:
+#          type: ExponentialTime
+#          parameters: [1.0] # lambda (mean freq)
+#        type: Event
+#        actions:
+#          - type: RunScafiProgram
+#            parameters: [it.unibo.spatialtuples.TaskGenerator, 5.0] # second argument is retention time
   - pool: &move
       - time-distribution:
           type: DiracComb
