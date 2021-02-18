@@ -1,11 +1,12 @@
 variables:
   random: &random
-    min: 0
-    max: 9
-    step: 1
-    default: 0
+      min: 0
+      max: 99
+      step: 1
+      default: 0
   range: &range
-    formula: 100
+    type: ArbitraryVariable
+    parameters: [100.0, [100.0,55.0]]
   moreINsInitially: &moreINsInitially # more INs than OUTs at the end of the simulation (starting lower)
     type: ArbitraryVariable
     parameters: [0, [0,1]]
@@ -28,9 +29,20 @@ variables:
   outWindow: &outWindow
     language: scala
     formula: (0.0, 30.0)
+  spatialWindowFactor: &spatialWindowFactor
+    min: 0.0
+    max: 3.0
+    step: 1.0
+    default: 1.0
+#  spatialWindowStart: &spatialWindowStart
+#    language: scala
+#    formula: spatialWindowFactor * 150.0
+#  spatialWindowEnd: &spatialWindowEnd
+#    language: scala
+#    formula: -150.0 * spatialWindowFactor + 1000
   spatialWindow: &spatialWindow
     language: scala
-    formula: (500.0, 600.0)
+    formula: (0.0+150*java.lang.Double.parseDouble(spatialWindowFactor.toString()),1000.0-150*java.lang.Double.parseDouble(spatialWindowFactor.toString()))
   outExpThreshold: &outExpThreshold # of an exponential rate
     formula: 6.2
   inExpThreshold: &inExpThreshold
@@ -43,8 +55,8 @@ variables:
     formula: 2.0 # move once every 2.0 seconds
   speed: &speed
     min: 0.0
-    max: 50.0
-    step: 20.0
+    max: 25.0
+    step: 10.0
     default: 0.0
   failureProb: &failureProb
     formula: 0.005 # 0.5%
@@ -52,21 +64,21 @@ variables:
     formula: 400
   surpassingTime: &surpassingTime
     formula: 1000
-  op_extension: &op_extension
+  opExtension: &opExtension
     type: ArbitraryVariable
-    parameters: [ 200, [ 100, 500, 800 ] ]
+    parameters: [ 450, [ 100, 500, 800 ] ]
   retainTime: &retainTime
     min: 1.0
     max: 10.0
     step: 4.0
-    default: 5.0
+    default: 2.0
   timeDistrib: &timeDistrib
     type: ArbitraryVariable
-    parameters: [0, [0,1]]
+    parameters: [0, [0,1,2]]
   timeDistribClass: &timeDistribClass
-    formula: if(timeDistrib==1) "ExponentialTime" else "DiracComb"
+    formula: if(timeDistrib==2) "WeibullDistribution" else if(timeDistrib==1) "ExponentialTime" else "DiracComb"
   timeDistribParams: &timeDistribParams
-    formula: if(timeDistrib==1) [1.0] else [1.0]
+    formula: if(timeDistrib==2) [1.0, 0.01] else if(timeDistrib==1) [1.0] else [1.0]
 
 layers:
   - type: it.unibo.alchemist.model.implementations.layers.UniformLayer
@@ -244,7 +256,7 @@ displacements:
       - molecule: lifetime
         concentration: 0
       - molecule: op_extension
-        concentration: *op_extension
+        concentration: *opExtension
       - molecule: doing_in
         concentration: false
       - molecule: doing_out

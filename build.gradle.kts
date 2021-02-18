@@ -186,11 +186,12 @@ fun makeTest(
 
 makeTest(name="hello", file = "hello_scafi", time = 100.0, vars = setOf("random"), taskSize = 2800)
 makeTest(name="procs", file = "test_aggregate_processes", time = 120.0, vars = setOf("random"), taskSize = 1500)
-makeTest(name="tuples", file = "spatialtuples", time = 500.0, vars = setOf("random"), taskSize = 1500)
+makeTest(name="tuples", file = "spatialtuples", time = 800.0, vars = setOf("random"), taskSize = 1500)
 makeTest(name="moving", file = "spatialtuples", time = 400.0, vars = setOf("speed","random"), taskSize = 1500)
 makeTest(name="moreins", file = "spatialtuples", time = 800.0, vars = setOf("moreINsInitially","random"), taskSize = 1500) // "speed"
 makeTest(name="st", file = "spatialtuples", time = 100.0, taskSize = 1500, effects="src/main/resources/spatialtuples2.aes")
-makeTest(name="analysis", file = "spatialtuples", time = 800.0, vars = setOf("moreINsInitially","speed","taskFactor","retainTime","timeDistrib","random"), taskSize = 1500) // "speed"
+makeTest(name="analysis", file = "spatialtuples", time = 800.0, vars = setOf("moreINsInitially","speed","taskFactor","retainTime","timeDistrib","op_extension","random"), taskSize = 1500) // "speed"
+makeTest(name="spatialext", file = "spatialtuples", time = 800.0, vars = setOf("speed","opExtension","range","spatialWindowFactor","random"), taskSize = 1500)
 
 
 // defaultTasks("fatJar")
