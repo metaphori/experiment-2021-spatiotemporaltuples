@@ -114,14 +114,15 @@ class SpatialCoordination extends AggregateProgram with StandardSensors with Cus
 
       branch(SECOND_EXPLORER && T>100) {
         var currentTarget = rep[Option[(TupleOpId,TupleOpResult)]](Option.empty)(curr => {
-          val b = breadcrumbs.keySet.map(toid => (toid, toid.op match {
+          val breadcrumbsForMe = breadcrumbs.keySet.map(toid => (toid, toid.op match {
             case OutHere(_, by, pos, _) => (by,pos)
           }))
             .filter(tp => (tp._2._1%teamSize) == (mid()%teamSize)) // select breadcrumbs from corresponding team member
+          val selectedBreadcrumbs = breadcrumbsForMe
             .filter(tp => tp._1.issuedAtTime > curr.map(_._1.issuedAtTime).getOrElse(0.0)) // select later breadcrumbs
             .minByOption(tp => tp._2._2.distance(currentPosition()))
-
-          b.map(tp => (tp._1, breadcrumbs(tp._1)))
+          node.put("breadcrumbsForMe", selectedBreadcrumbs)
+          selectedBreadcrumbs.map(tp => (tp._1, breadcrumbs(tp._1)))
         }).map(_._1.op match { case OutHere(_, _, position, _) => position })
         if(T < 120) { currentTarget = Some(horizon) }
         node.put("target_breadcrumb_loc", currentTarget)
