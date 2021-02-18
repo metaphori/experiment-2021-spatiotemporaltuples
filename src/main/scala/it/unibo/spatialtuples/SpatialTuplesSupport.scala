@@ -98,9 +98,10 @@ trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC
         }
         case thisPhase@OutPhase.Serving(inProc) => {
           // TODO: fix the need for that delay
-          val notAliveIN = C[Double, Boolean](potential, _&&_, delay(!arg.keySet.contains(inProc), false, 5), true)
+          val noINlocally = delay(!arg.keySet.contains(inProc), false, 5)
+          val notAliveIN = C[Double, Boolean](potential, _&&_, noINlocally, noINlocally)
           // Wait ack from IN to actually close
-          val ack = C[Double, Boolean](potential, _||_, inOwnerAck(toid, inProc, events), false)
+          val ack = gossipBy[Boolean](inOwnerAck(toid, inProc, events), _ || _)
           // Close when ack reaches the OUT owner
           val ackEvent: Set[TupleOpEvent] = if(owner && ack) Set(OUTAck(toid)) else Set.empty
           (branch[OutPhase](owner && ack){ delay(OutPhase.Done, thisPhase) } {
@@ -180,10 +181,10 @@ trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC
           // Wait ack from OUT to actually close
           val ack = C[Double, Boolean](g, _||_, keepUntil[Boolean](outOwnerAck(out, events), until = v => !v), false)
           // Close when ack reaches the IN owner
-          (if(owner && ack){ InPhase.Done(out.outTuple) } else { InPhase.Read(out) }, Set(event))
+          (if(owner && ack){ InPhase.Done(out) } else { InPhase.Read(out) }, Set(event))
         }
-        case InPhase.Done(outTuple) => {
-          (InPhase.Done(outTuple), Set(INDone(toid)))
+        case InPhase.Done(out) => {
+          (InPhase.Done(out), Set(INDone(toid)))
         }
       }
     }}
@@ -333,6 +334,6 @@ object SpatialTuplesSupport {
   object InPhase {
     case object Start extends InPhase { override val toNum: Int = 1 }
     case class Read(out: TupleOpId) extends InPhase { override val toNum: Int = 2 }
-    case class Done(outTuple: Tuple) extends InPhase { override val toNum: Int = 3 }
+    case class Done(out: TupleOpId) extends InPhase { override val toNum: Int = 3 }
   }
 }

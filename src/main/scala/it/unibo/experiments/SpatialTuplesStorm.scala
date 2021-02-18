@@ -99,7 +99,7 @@ class SpatialTuplesStorm extends AggregateProgram with StandardSensors with Cust
     val initiallyMoreINsThanOUTs = node.get[Int](Molecules.MORE_INS_THAN_OUTS_INITIALLY) > 0
     val exhaustingTime = node.get[Int](Molecules.EXHAUSTING_TIME)
     val surpassingTime = node.get[Int](Molecules.SURPASSING_TIME)
-    val extension = node.getOrElse[Int](Molecules.OP_EXTENSION, 700)
+    val extension = node.getOrElse[Double](Molecules.OP_EXTENSION, 700.0)
     val surpassingNumber = node.get[Int](Molecules.SURPASSING_NUMBER)
     val (oTh, iTh) = (node.get[Double](Molecules.OUT_EXP_THRES), node.get[Double](Molecules.OUT_EXP_THRES))
     val templates = Array("a") // ,"b","c")

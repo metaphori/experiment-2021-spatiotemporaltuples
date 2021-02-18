@@ -95,7 +95,7 @@
       "val": 8
     },
     "molFilter": true,
-    "molString": "leader_out_proc",
+    "molString": "leader_in_proc",
     "molPropertyFilter": true,
     "property": "",
     "writingPropertyValue": false,
@@ -156,7 +156,7 @@
       "val": 25
     },
     "molFilter": true,
-    "molString": "leader_in_proc",
+    "molString": "leader_out_proc",
     "molPropertyFilter": true,
     "property": "",
     "writingPropertyValue": false,

@@ -1,12 +1,12 @@
 variables:
   random: &random
       min: 0
-      max: 99
+      max: 4
       step: 1
       default: 0
   range: &range
     type: ArbitraryVariable
-    parameters: [100.0, [100.0,55.0]]
+    parameters: [85.0, [100.0,85.0]]
   moreINsInitially: &moreINsInitially # more INs than OUTs at the end of the simulation (starting lower)
     type: ArbitraryVariable
     parameters: [0, [0,1]]
@@ -33,7 +33,7 @@ variables:
     min: 0.0
     max: 3.0
     step: 1.0
-    default: 1.0
+    default: 2.0
 #  spatialWindowStart: &spatialWindowStart
 #    language: scala
 #    formula: spatialWindowFactor * 150.0
@@ -42,7 +42,12 @@ variables:
 #    formula: -150.0 * spatialWindowFactor + 1000
   spatialWindow: &spatialWindow
     language: scala
-    formula: (0.0+150*java.lang.Double.parseDouble(spatialWindowFactor.toString()),1000.0-150*java.lang.Double.parseDouble(spatialWindowFactor.toString()))
+    formula: (0.0+100*java.lang.Double.parseDouble(spatialWindowFactor.toString()),1000.0-100*java.lang.Double.parseDouble(spatialWindowFactor.toString()))
+  opExtension: &opExtension
+    #type: ArbitraryVariable
+    #parameters: [ 450, [ 100, 500, 800 ] ]
+    language: scala
+    formula: 150 + 150.0 * (4-java.lang.Double.parseDouble(spatialWindowFactor.toString()))
   outExpThreshold: &outExpThreshold # of an exponential rate
     formula: 6.2
   inExpThreshold: &inExpThreshold
@@ -57,16 +62,13 @@ variables:
     min: 10.0
     max: 25.0
     step: 10.0
-    default: 0.0
+    default: 10.0
   failureProb: &failureProb
     formula: 0.005 # 0.5%
   exhaustingTime: &exhaustingTime
     formula: 400
   surpassingTime: &surpassingTime
     formula: 1000
-  opExtension: &opExtension
-    type: ArbitraryVariable
-    parameters: [ 450, [ 100, 500, 800 ] ]
   retainTime: &retainTime
     min: 1.0
     max: 10.0
@@ -193,7 +195,7 @@ pools:
 displacements:
   - in:
       type: Grid
-      parameters: [0, 0, 1000, 1000, 50, 50, 5, 5]
+      parameters: [0, 0, 1000, 1000, 50, 50, 25, 25]
     programs:
       #- *taskGenerator
       - *move
