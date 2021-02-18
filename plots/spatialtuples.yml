@@ -1,31 +1,31 @@
 # Goal is to show reactivity to spikes of load, withstanding leader failures, and the benefit of an updated metric
 the_plots_labels:
   - Time                 #0
-  - '# outs'
-  - '# outs closed'
-  - '# ins'
-  - '# ins unblocked'
+  - '# OUTs'
+  - '# OUTs closed'
+  - '# INs'
+  - '# INs unblocked'
   - 'num processes' #5
   - 'mean processes/dev'
-  - '# out initiators'
-  - '# in initiators'
-  - '# out timeouts'
-  - '# in timeouts' #10
-  - '# out phase1'
-  - '# out phase2'
-  - '# out phase3'
-  - '# in phase1'
-  - '# in phase2' #15
-  - '# in phase3'
+  - '# OUT initiators'
+  - '# IN initiators'
+  - '# OUT timeouts'
+  - '# IN timeouts' #10
+  - '# OUTs available' # '# out phase1'
+  - '# OUTs reserved' # out phase2'
+  - '# OUTs phase3'
+  - '# INs waiting' #'# in phase1'
+  - '# INs being served' #'# in phase2' #15
+  - '# INs phase3'
   - 'lifetime_sum'
   - 'lifetime_mean'
   - 'lifetime_max'
-  - '# doing in' #20
-  - '# doing out'
-  - '# doing both'
+  - '# doing IN' #20
+  - '# doing OUT'
+  - '# doing IN+OUT'
 the_plots_formats:
-  - [0,1,2,3,4,9,10] #- [0,1,2,3,4,7,8,6,9,10]
-  - [0,11,12,13,14,15,16]
+  - [0,1,2,3,4] #,9,10] #- [0,1,2,3,4,7,8,6,9,10]
+  - [0,11,12,14,15] # [0,11,12,13,14,15,16]
   - [0,19]
   - [0,20,21,22]
 #  - [0,1,2,3,4,7,8,6,9,10]
@@ -34,31 +34,31 @@ the_plots_formats:
 #  - errors
 line_widths:
   - [2,2,2,2,2,  2,2,2,2,2,  2,2,2,2,2,  2,2,2,2,2,  2,2,2,2,2]
+line_styles: #[‘solid’ | ‘dashed’, ‘dashdot’, ‘dotted’ | (offset, on-off-dash-seq) | '-' | '--' | '-.' | ':' | 'None' | ' ' | '']
+  - ['solid','solid','solid','solid','solid',    'solid','solid','solid','solid','solid',
+     'solid','solid','solid','solid','solid',    'solid','solid','solid','solid','solid',
+     'solid','solid','solid','solid','solid']
 default_colors: &default_colors ["black", "cyan", "orange","red","yellow",
                                  "magenta","green","black", "blue","brown",
-                                 "darkgray", "black","cyan", "orange","red",
-                                 "yellow","magenta","cyan","red","blue",
+                                 "darkgray", "red","orange", "blue","lightblue",
+                                 "blue","green","cyan","red","blue",
                                  "brown","orange","green"]
 the_plots_colors:
   - *default_colors
 legend_position:
   - "upper left"
-  - "upper left"
+  - "upper right"
 legend_bbox_to_anchor:
-  - [-0.077,-0.2]
-  - [-0.077,-0.2]
+#  - [-0.077,-0.2]
+#  - [-0.077,-0.2]
 legend_columns:
-  - 4
-  - 4
-legend_size: 8
+  - 1
+  - 1
+legend_size: 12
 export_legend:
 #  0: true
 force_limit_plot_y:
-#  1: 140
-#   3: 1000
-#  4: 35
-#  0: 40
-#  3: 80
+  1: 15.0
 #force_limit_plot_x:
 #  0: 800
 #  1: 800
@@ -66,14 +66,14 @@ force_limit_plot_y:
 hlines:
   #0: [[10, { linestyle: '--' }]]
 vlines:
-  0: [[30, { linestyle: ':' , color: 'red'}]]
-  1: [[30, { linestyle: ':' , color: 'red'}]]
+  0: [[30, { linestyle: ':' , color: 'gray'}],[400, { linestyle: ':' , color: 'gray'}]]
+#  1: [[30, { linestyle: ':' , color: 'red'}]]
 sampling:
   0: true
   1: true
   2: true
   3: true
-format: 'png'
+format: 'pdf'
 
 #title_prefix: ''
 #excluded_titles: [0]

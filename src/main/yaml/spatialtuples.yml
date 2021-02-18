@@ -54,7 +54,7 @@ variables:
   moveFrequency: &moveFrequency
     formula: 2.0 # move once every 2.0 seconds
   speed: &speed
-    min: 0.0
+    min: 10.0
     max: 25.0
     step: 10.0
     default: 0.0

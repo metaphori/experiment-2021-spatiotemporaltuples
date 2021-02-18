@@ -154,7 +154,8 @@ def plot(config,content,nf,pformat):
   maxy = float("-inf")
   for k in range(1,len(pformat)): # skip x-axis which is at pos 0
       #pdb.set_trace()
-      plt.plot(content[pformat[0]], content[pformat[k]], color=the_plots_colors[nf][pformat[k]], label=the_plots_labels[pformat[k]], linewidth=line_widths[nf][k])
+      plt.plot(content[pformat[0]], content[pformat[k]], color=the_plots_colors[nf][pformat[k]], label=the_plots_labels[pformat[k]], linewidth=line_widths[nf][pformat[k]],
+               linestyle=line_styles[nf][pformat[k]])
       maxy = max(maxy, np.nanmax(content[pformat[k]]))
   maxy = min(maxy+10, limitPlotY[nf])
   if nf in forceLimitPlotY: maxy = forceLimitPlotY[nf]
@@ -211,6 +212,7 @@ the_plots_labels = []
 the_plots_formats = []
 the_plots_colors = []
 line_widths = []
+line_styles = []
 title_prefix = ""
 
 ###################################################################################
@@ -264,6 +266,7 @@ with open(plotconfig, 'r') as stream:
         the_plots_colors = parse_sim_option(pc, 'the_plots_colors')
         suffixes = parse_sim_option(pc, 'file_suffixes')
         line_widths = parse_sim_option(pc, 'line_widths')
+        line_styles = parse_sim_option(pc, 'line_styles')
         limitPlotY = parse_sim_option(pc, 'limit_plot_y', float('inf'))
         startPlotY = parse_sim_option(pc, 'start_plot_y', 0)
         forceLimitPlotY = parse_sim_option(pc, 'force_limit_plot_y')
