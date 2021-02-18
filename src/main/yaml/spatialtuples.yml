@@ -25,6 +25,9 @@ variables:
   outWindow: &outWindow
     language: scala
     formula: (0.0, 30.0)
+  spatialWindow: &spatialWindow
+    language: scala
+    formula: (500.0, 600.0)
   outExpThreshold: &outExpThreshold # of an exponential rate
     formula: 6.2
   inExpThreshold: &inExpThreshold
@@ -32,7 +35,7 @@ variables:
   maxExtension: &maxExtension
     formula: 200.0
   opTimeout: &opTimeout
-    formula: 1000.0
+    formula: 780.0
   moveFrequency: &moveFrequency
     formula: 2.0 # move once every 2.0 seconds
   speed: &speed
@@ -43,11 +46,11 @@ variables:
   failureProb: &failureProb
     formula: 0.005 # 0.5%
   exhaustingTime: &exhaustingTime
-    formula: 300
+    formula: 400
   surpassingTime: &surpassingTime
     formula: 1000
   op_extension: &op_extension
-    formula: 700
+    formula: 200
 
 layers:
   - type: it.unibo.alchemist.model.implementations.layers.UniformLayer
@@ -135,7 +138,7 @@ network-model:
 pools:
   - pool: &program
       - time-distribution: #1
-          type: ExponentialTime
+          type: DiracComb #ExponentialTime
           parameters: [ 1.0 ] # lambda (mean freq)
         type: Event
         actions:
@@ -232,3 +235,5 @@ displacements:
         concentration: false
       - molecule: doing_in_and_out
         concentration: false
+      - molecule: spatialWindow
+        concentration: *spatialWindow

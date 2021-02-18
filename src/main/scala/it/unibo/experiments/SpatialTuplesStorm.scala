@@ -87,9 +87,12 @@ class SpatialTuplesStorm extends AggregateProgram with StandardSensors with Cust
   }
 
   def stormScenaro(): Set[TupleOpId] = {
-    val maxExt = node.get[Double](Molecules.MAX_EXTENSION)
+    // val maxExt = node.get[Double](Molecules.MAX_EXTENSION)
     val (oFrom,oTo) = node.get[(Double,Double)](Molecules.OUT_WINDOW)
     val (iFrom,iTo) = node.get[(Double,Double)](Molecules.IN_WINDOW)
+    val (boxFrom,boxTo) = node.get[(Double,Double)](Molecules.SPATIAL_WINDOW)
+    val p = currentPosition()
+    val withinBox = p.x > boxFrom && p.x < boxTo && p.y > boxFrom && p.y < boxTo
     val stillTodoINs = senseEnvData[Int](Molecules.MAX_INS)
     val stillTodoOUTs = senseEnvData[Int](Molecules.MAX_OUTS)
     val breakevenNumber = node.get[Int](Molecules.BREAKEVEN_NUMBER)
@@ -100,20 +103,22 @@ class SpatialTuplesStorm extends AggregateProgram with StandardSensors with Cust
     val surpassingNumber = node.get[Int](Molecules.SURPASSING_NUMBER)
     val (oTh, iTh) = (node.get[Double](Molecules.OUT_EXP_THRES), node.get[Double](Molecules.OUT_EXP_THRES))
     val templates = Array("a") // ,"b","c")
-    val outs = if((T > oFrom && T < oTo && expDistibution.sample() > oTh && stillTodoOUTs>0)
+    val chanceOut = expDistibution.sample()
+    val chanceIn = expDistibution.sample()
+    val outs = if(withinBox && ((T > oFrom && T < oTo && chanceOut > oTh && stillTodoOUTs>0)
       || (T > oTo && stillTodoOUTs>0)
       || (T >= exhaustingTime && initiallyMoreINsThanOUTs && (stillTodoOUTs+breakevenNumber)>stillTodoINs)
-      || (T >= surpassingTime && initiallyMoreINsThanOUTs && (stillTodoOUTs+breakevenNumber+surpassingNumber)>stillTodoINs)){
+      || (T >= surpassingTime && initiallyMoreINsThanOUTs && (stillTodoOUTs+breakevenNumber+surpassingNumber)>stillTodoINs))){
       inc(Exports.NUM_OUTS)
       changeEnvData(Molecules.MAX_OUTS, stillTodoOUTs-1)
       //println(s"[t=$T] node ${mid()} generating an OUT")
       Set(TupleOpId(s"${T}_${mid()}_out")(OutMe(s"${templates(((templates.size-1)*nextRandom()).round.toInt)}(${(nextRandom()*100).round})", mid(), extension),
         alchemistTimestamp.toDouble, node.getOrElse(Molecules.OP_TIMEOUT, 200)))
     } else { Set.empty }
-    val ins = if((T > iFrom && T < iTo && expDistibution.sample() > iTh && stillTodoINs>0)
+    val ins = if(withinBox && ((T > iFrom && T < iTo && chanceIn > iTh && stillTodoINs>0)
       || (T > iTo && stillTodoINs>0)
       || (T >= exhaustingTime && !initiallyMoreINsThanOUTs && (stillTodoINs+breakevenNumber)>stillTodoOUTs)
-      || (T >= surpassingTime && !initiallyMoreINsThanOUTs && (stillTodoINs+breakevenNumber+surpassingNumber)>stillTodoOUTs)){
+      || (T >= surpassingTime && !initiallyMoreINsThanOUTs && (stillTodoINs+breakevenNumber+surpassingNumber)>stillTodoOUTs))){
       inc(Exports.NUM_INS)
       changeEnvData(Molecules.MAX_INS, stillTodoINs-1)
       //println(s"[thread=${Thread.currentThread()}][t=$T] node ${mid()} generating an IN")
@@ -164,6 +169,7 @@ object SpatialTuplesStorm {
     val OUTS_TIMEOUT: String = "timeout_outs"
     val MORE_INS_THAN_OUTS_INITIALLY = "moreINsInitially"
     val EXHAUSTING_TIME = "exhaustingTime"
+    val SPATIAL_WINDOW = "spatialWindow"
   }
   object Effects {
     val OUT_PHASE = "out_phase"

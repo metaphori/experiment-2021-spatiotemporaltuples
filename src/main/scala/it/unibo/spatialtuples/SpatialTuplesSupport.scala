@@ -82,13 +82,6 @@ trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC
 
     val (newPhase,newEvents) = rep[(OutPhase,Set[TupleOpEvent])]((OutPhase.Normal, Set.empty)) { case (currPhase, _) => {
       val phase: OutPhase = broadcastOn(potential, currPhase)
-      if(owner){
-        phase match {
-          case OutPhase.Normal => inc(Exports.NUM_OUTS_PHASE1)
-          case OutPhase.Serving(_) => inc(Exports.NUM_OUTS_PHASE2)
-          case OutPhase.Done => inc(Exports.NUM_OUTS_PHASE3)
-        }
-      }
 
       branchOn(phase) {
         case OutPhase.Normal => {
@@ -122,6 +115,13 @@ trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC
       }
     }}
 
+    if(owner){
+      newPhase match {
+        case OutPhase.Normal => inc(Exports.NUM_OUTS_PHASE1)
+        case OutPhase.Serving(_) => inc(Exports.NUM_OUTS_PHASE2)
+        case OutPhase.Done => inc(Exports.NUM_OUTS_PHASE3)
+      }
+    }
     node.put(Effects.OUT_PHASE, newPhase.toNum)
 
     (newEvents, newPhase.isDone)
@@ -157,14 +157,6 @@ trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC
     val (newPhase,newEvents) = rep[(InPhase,Set[TupleOpEvent])]((InPhase.Start, Set.empty)){ case (currPhase, _) => {
       val phase = broadcastOn(g, currPhase)
 
-      if(owner){
-        phase match {
-          case InPhase.Start => inc(Exports.NUM_INS_PHASE1)
-          case InPhase.Read(_) => inc(Exports.NUM_INS_PHASE2)
-          case InPhase.Done(_) => inc(Exports.NUM_INS_PHASE3)
-        }
-      }
-
       branchOn(phase){
         case InPhase.Start => {
           // Look for local matching OUTs
@@ -196,6 +188,13 @@ trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC
       }
     }}
 
+    if(owner){
+      newPhase match {
+        case InPhase.Start => inc(Exports.NUM_INS_PHASE1)
+        case InPhase.Read(_) => inc(Exports.NUM_INS_PHASE2)
+        case InPhase.Done(_) => inc(Exports.NUM_INS_PHASE3)
+      }
+    }
     node.put(if(toid.issuedAtTime<28) Effects.IN_PHASE else Effects.IN_PHASE2, newPhase.toNum)
 
     val result = TupleOpResult(
