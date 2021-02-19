@@ -1,12 +1,12 @@
 variables:
   random: &random
       min: 0
-      max: 4
+      max: 9
       step: 1
       default: 0
   range: &range
     type: ArbitraryVariable
-    parameters: [85.0, [100.0,85.0]]
+    parameters: [100.0, [100.0,55.0]]
   moreINsInitially: &moreINsInitially # more INs than OUTs at the end of the simulation (starting lower)
     type: ArbitraryVariable
     parameters: [0, [0,1]]

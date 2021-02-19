@@ -192,6 +192,7 @@ makeTest(name="moreins", file = "spatialtuples", time = 800.0, vars = setOf("mor
 makeTest(name="st", file = "spatialtuples", time = 100.0, taskSize = 1500, effects="src/main/resources/spatialtuples2.aes")
 makeTest(name="analysis", file = "spatialtuples", time = 800.0, vars = setOf("moreINsInitially","speed","taskFactor","retainTime","timeDistrib","op_extension","random"), taskSize = 1500) // "speed"
 makeTest(name="spatialext", file = "spatialtuples", time = 800.0, vars = setOf("speed","opExtension","range","spatialWindowFactor","random"), taskSize = 1500)
+makeTest(name="mobility", file = "spatialtuples", time = 800.0, vars = setOf("spatialWindowFactor","speed","range","random"), taskSize = 1500)
 
 
 // defaultTasks("fatJar")
