@@ -194,6 +194,6 @@ makeTest(name="analysis", file = "spatialtuples", time = 800.0, vars = setOf("mo
 makeTest(name="spatialext", file = "spatialtuples", time = 800.0, vars = setOf("speed","opExtension","range","spatialWindowFactor","random"), taskSize = 1500)
 makeTest(name="mobility", file = "spatialtuples", time = 800.0, vars = setOf("spatialWindowFactor","speed","range","random"), taskSize = 1500)
 
-makeTest(name="exp", file = "spatialtuples", time = 800.0, vars = setOf("speed","timeDistrib","random"), taskSize = 1500)
+makeTest(name="exp", file = "spatialtuples", time = 1000.0, vars = setOf("speed","timeDistrib","random"), taskSize = 1200)
 
 // defaultTasks("fatJar")

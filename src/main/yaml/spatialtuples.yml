@@ -1,12 +1,12 @@
 variables:
   random: &random
       min: 0
-      max: 49
+      max: 99
       step: 1
       default: 0
   range: &range
     type: ArbitraryVariable
-    parameters: [100.0, [100.0,55.0]]
+    parameters: [100.0, [100.0,85.0]]
   moreINsInitially: &moreINsInitially # more INs than OUTs at the end of the simulation (starting lower)
     type: ArbitraryVariable
     parameters: [0, [0,1]]
@@ -66,14 +66,15 @@ variables:
   failureProb: &failureProb
     formula: 0.005 # 0.5%
   exhaustingTime: &exhaustingTime
-    formula: 400
+    formula: 500
   surpassingTime: &surpassingTime
-    formula: 1000
+    formula: 1200
   retainTime: &retainTime
-    min: 1.0
-    max: 10.0
-    step: 4.0
-    default: 2.0
+    #min: 1.0
+    #max: 10.0
+    #step: 4.0
+    #default: 2.0
+    formula: if(timeDistrib==2) 2.0 else if(timeDistrib==1) 5.0 else 1.2
   timeDistrib: &timeDistrib
     type: ArbitraryVariable
     parameters: [2, [0,1,2]]
