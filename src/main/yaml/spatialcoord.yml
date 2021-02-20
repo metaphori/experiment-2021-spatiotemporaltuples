@@ -207,7 +207,7 @@ displacements:
   # VICTIMS
   - in:
       type: SpecificPositions
-      parameters: [ [400,100], [600,-40], [800,160], [820,-190]]
+      parameters: [ [400,100], [600,-40], [800,160], [820,-190], [658, 29]]
     programs:
       #- *move
       - *program
@@ -261,7 +261,7 @@ displacements:
   # OBSTACLES
   - in:
       type: SpecificPositions
-      parameters: [ [380,100], [470,-20], [700,100], [720,-160], [400,10], [200,-30]]
+      parameters: [ [380,100], [470,-90], [700,100], [720,-160], [400,10], [200,-30]]
     programs:
       - *program
     contents:

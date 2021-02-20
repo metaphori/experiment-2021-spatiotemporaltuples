@@ -6,6 +6,8 @@ import it.unibo.spatialtuples.{CircularRegion, SpatialTuplesSupport}
 import it.unibo.spatialtuples.SpatialTuplesSupport._
 import it.unibo.utils.MovementUtils
 import org.apache.commons.math3.distribution.ExponentialDistribution
+import org.scalactic.TripleEquals._
+import org.scalactic.Tolerance._
 
 class SpatialCoordination extends AggregateProgram with StandardSensors with CustomSpawn with Gradients with MovementUtils with SpatialTuplesSupport
   /*with LindaDSL*/ with FieldUtils {
@@ -49,6 +51,12 @@ class SpatialCoordination extends AggregateProgram with StandardSensors with Cus
     node.put(Effects.IN_PHASE2, 0)
     node.put(Effects.OUT_PHASE, 0)
     node.put(Effects.INITIATOR, false)
+    node.put(Effects.FIRST_EXPLORER, FIRST_EXPLORER)
+    node.put(Effects.SECOND_EXPLORER, SECOND_EXPLORER)
+  }
+
+  def closeEnough(curr: (TupleOpId, TupleOpResult)): Boolean = curr._1.op match {
+    case OutHere(tp,by,pos,ext) => pos.distance(currentPosition()) < Constants.CLOSENESS_TO_BREADCRUMB
   }
 
   override def main(): Any = {
@@ -69,9 +77,9 @@ class SpatialCoordination extends AggregateProgram with StandardSensors with Cus
 
       // MOVEMENT LOGIC
       branch(FIRST_EXPLORER && !victimFound && currentPosition().x < Constants.MAX_X) {
-        exploreTowards(target)
+        moveTo(exploreTowards(target))
       } {
-        node.put(Molecules.MOVE_TOWARDS, currentPosition())
+        moveTo(currentPosition())
       }
 
       // OBSTACLE HITTING LOGIC
@@ -80,9 +88,10 @@ class SpatialCoordination extends AggregateProgram with StandardSensors with Cus
       }
 
       val newBreadcrumb: Set[TupleOpId] = if(FIRST_EXPLORER && T%5==0 && !UNAVAILABLE) {
-        Set(TupleOpId(s"breadcrumb_${mid()}_${T}")(OutHere(s"wasHere(${mid()},$T,${currentPosition()})", mid(), currentPosition(), 30), T.toDouble))
+        Set(TupleOpId(s"breadcrumb_${mid()}_${T}")(OutHere(s"wasHere(${mid()},$T,${currentPosition()})", mid(), currentPosition(), Constants.BREADCRUMB_EXTENSION), T.toDouble))
       } else { Set.empty }
 
+      // Breadcrumb logs: these are tuple operation IDs propagated to spread knowledge about where tuple operations are located
       var breadcrumbLogs = sspawn[ID,Unit,Set[TupleOpId]](k => a => {
         val g = distanceTo(mid() == k)
         val set: Set[TupleOpId] = gossipSet[TupleOpId](if(mid() == k) newBreadcrumb else Set.empty).filter(_.op match {
@@ -101,38 +110,63 @@ class SpatialCoordination extends AggregateProgram with StandardSensors with Cus
         case OutHere(_, by, pos, _) => (by,pos)
       }).minByOption(tp => tp._2.distance(currentPosition())).foreach(tp => node.put(Molecules.BREADCRUMB, tp._1 % teamSize))
 
-      val breadcrumbsToSpawn = breadcrumbLogs.flatMap(_._2).filter(_.op match {
-        case OutHere(_, _, pos, _) =>pos.distance(currentPosition()) < Constants.EXT_PID_DIFFUSION
+      // One process participates to all processes for close breadcrumbs
+      val breadcrumbsToSpawn = breadcrumbLogs.flatMap(_._2).filter(toid => toid.op match {
+        case OutHere(_, _, pos, _) => {
+          //if(mid()==9) { println(s"[${mid()}][t=$T] Considering breadcrumb ${toid}: ${pos.distance(currentPosition())} < ${Constants.EXT_PID_DIFFUSION} ?  ${pos.distance(currentPosition()) < Constants.EXT_PID_DIFFUSION}") }
+          pos.distance(currentPosition()) < Constants.EXT_PID_DIFFUSION
+        }
       }).toSet
 
-      // TUPLES: OUT of breadcrumbs by first explorers, READ of breadcrumbs by second explorers
+      // TUPLE OPERATIONS VM: OUT of breadcrumbs by first explorers, READ of breadcrumbs by second explorers
       val breadcrumbs = rep(Map[TupleOpId,TupleOpResult]())(ops => {
         val newBreadcrumbs = sspawn[TupleOpId, ProcArg, TupleOpResult](tupleOperation _, breadcrumbsToSpawn, ops)
         newBreadcrumbs
       })
       node.put("breadcrumbs", breadcrumbs)
 
-      branch(SECOND_EXPLORER && T>100) {
-        var currentTarget = rep[Option[(TupleOpId,TupleOpResult)]](Option.empty)(curr => {
-          val breadcrumbsForMe = breadcrumbs.keySet.map(toid => (toid, toid.op match {
-            case OutHere(_, by, pos, _) => (by,pos)
-          }))
-            .filter(tp => (tp._2._1%teamSize) == (mid()%teamSize)) // select breadcrumbs from corresponding team member
-          val selectedBreadcrumbs = breadcrumbsForMe
-            .filter(tp => tp._1.issuedAtTime > curr.map(_._1.issuedAtTime).getOrElse(0.0)) // select later breadcrumbs
-            .minByOption(tp => tp._2._2.distance(currentPosition()))
-          node.put("breadcrumbsForMe", selectedBreadcrumbs)
-          selectedBreadcrumbs.map(tp => (tp._1, breadcrumbs(tp._1)))
-        }).map(_._1.op match { case OutHere(_, _, position, _) => position })
-        if(T < 120) { currentTarget = Some(horizon) }
+      branch[Any](SECOND_EXPLORER && T > Constants.T_SECOND_EXPLORERS_DEPARTURE) {
+        type B = Option[(TupleOpId,TupleOpResult)]
+        val (reached,currentBreadcrumb) = rep[(B,B)]((Option.empty,Option.empty)){ case (reached,curr) => {
+          mux(curr.isDefined && !closeEnough(curr.get)) { (reached,curr) } {
+            val breadcrumbsForMe = breadcrumbs.keySet.map(toid => (toid, toid.op match {
+              case OutHere(_, by, pos, _) => (by, pos)
+            }))
+              .filter(tp => (tp._2._1 % teamSize) == (mid() % teamSize)) // select breadcrumbs from corresponding team member
+            node.put("breadcrumbsForMe", breadcrumbsForMe)
+            val selectedBreadcrumbs = breadcrumbsForMe
+              .filter(tp => tp._1.issuedAtTime > reached.map(_._1.issuedAtTime).getOrElse(0.0)) // select later breadcrumbs
+              .minByOption(tp => tp._2._2.distance(currentPosition()))
+            (if(curr.isDefined) curr else reached, selectedBreadcrumbs.map(tp => (tp._1, breadcrumbs(tp._1))))
+          }
+        } }
+        node.put("breadcrumbsReached and Selected", (reached,currentBreadcrumb))
+        var currentTarget = currentBreadcrumb.map(_._1.op match { case OutHere(_, _, position, _) => position }).filter(_ != reached)
+        if(T < Constants.T_SECOND_EXPLORERS_DEPARTURE+20) { currentTarget = Some(horizon) }
         node.put("target_breadcrumb_loc", currentTarget)
         //moveFollowingBreadcrumbs(breadcrumbs)
-        exploreTowards(currentTarget.getOrElse(currentPosition()))
+        val skipAndFollow = branch(currentTarget.isEmpty) { skipAndFollowLogic(target) } { currentPosition() }
+        moveTo(exploreTowards(currentTarget.getOrElse(skipAndFollow), maxRandomStep = 0))
       } {
 
       }
 
     }{ /* unavailable devices do not do anything */ }
+
+    def skipAndFollowLogic(eventualTarget: Point2D): Point2D = {
+      println(s"[${mid()}]")
+      val up = false // nextRandom() > 0.5
+      val p = currentPosition()
+      rep[(Point2D,Point2D,Boolean)]((p,p,up)){ case (startingPos, _, initiallyUp) => {
+        val targetY = if(initiallyUp) startingPos.y + Constants.AVOID_BY_Y else startingPos.y - Constants.AVOID_BY_Y
+        val targetX = startingPos.x + Constants.AVOID_BY_X
+        val nextTarget: Point2D = if(p.x === startingPos.x +- 0.01 && !(p.y === targetY +- 0.1) ) { Point2D(p.x, targetY) }
+          else if(p.x === targetX +- 0.1 && !(p.y === startingPos.y +- 0.1))  { Point2D(p.x, startingPos.y) }
+          else if(p.y === targetY +- 0.1) { Point2D(targetX, p.y) }
+          else  { eventualTarget }
+        (startingPos, nextTarget, initiallyUp)
+      }}._2
+    }
 
     def gossipSet[T](newSet: Set[T] = Set.empty): Set[T] = rep(newSet)(s => includingSelf.unionHoodSet(nbr{ s }) ++ newSet)
 
@@ -152,14 +186,19 @@ class SpatialCoordination extends AggregateProgram with StandardSensors with Cus
     ???
   }
 
-  def exploreTowards(horizon: Point2D, maxStep: Double = 20): Unit = {
+  def exploreTowards(horizon: Point2D, maxStep: Double = 20, maxRandomStep: Double = 20): Point2D = {
     val curPos = currentPosition()
-    val rp = randomPoint(curPos, maxStep)
-    val offsetX = if(curPos.x < horizon.x) maxStep/2 else if(curPos.x > horizon.x) -maxStep/2 else 0
-    val offsetY = if(curPos.y < horizon.y) maxStep/2 else if(curPos.y > horizon.y) -maxStep/2 else 0
-    val nextTarget = Point2D(rp.x + offsetX, rp.y + offsetY) // -200 + (mid() % teamSize) * (500 / teamSize) +
-    node.put(Molecules.MOVE_TOWARDS, nextTarget)
+    val rp = randomPoint(curPos, maxRandomStep)
+    val deltaX = horizon.x-curPos.x
+    val deltaY = horizon.y-curPos.y
+    val offsetX = if(deltaX > 0) Math.min(deltaX, maxStep/2) else if(deltaX < 0) Math.max(deltaX, -maxStep/2) else 0
+    val offsetY = if(deltaY > 0) Math.min(deltaY, maxStep/2) else if(deltaY < 0) Math.max(deltaY, -maxStep/2) else 0
+    Point2D(rp.x + offsetX, rp.y + offsetY) // -200 + (mid() % teamSize) * (500 / teamSize) +
   }
+
+  def moveTo(nextTarget: Point2D): Unit =
+    node.put(Molecules.MOVE_TOWARDS, nextTarget)
+
 
   implicit class RichPoint2D(p: Point2D) {
     def /(d: Double): Point2D = Point2D(p.x/d, p.y/2)
@@ -207,6 +246,8 @@ object SpatialCoordination {
     val MOVE_TOWARDS = "target"
   }
   object Effects {
+    val FIRST_EXPLORER: String = "first_explorer"
+    val SECOND_EXPLORER: String = "second_explorer"
     val OUT_PHASE = "out_phase"
     val IN_PHASE = "in_phase"
     val IN_PHASE2 = "in_phase2"
@@ -216,9 +257,14 @@ object SpatialCoordination {
     val INITIATOR = "initiator"
   }
   object Constants {
+    val AVOID_BY_Y = 60
+    val AVOID_BY_X = 100
+    val BREADCRUMB_EXTENSION: Double = 100
+    val CLOSENESS_TO_BREADCRUMB = 30.0
     val VICTIM_RANGE = 20.0
     val CRITICAL_VICINITY_OBSTACLE = 20.0
-    val EXT_PID_DIFFUSION = 120 // the extension of space that PIDs must be propagated to support spatial situation
+    val EXT_PID_DIFFUSION = 150 // the extension of space that PIDs must be propagated to support spatial situation
     val MAX_X = 900
+    val T_SECOND_EXPLORERS_DEPARTURE = 50
   }
 }
