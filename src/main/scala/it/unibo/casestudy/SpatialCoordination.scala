@@ -65,13 +65,23 @@ class SpatialCoordination extends AggregateProgram with StandardSensors with Cus
     val meanYLevel = -200 + (mid() % teamSize) * (500 / teamSize) // Y level in the map for team-wide exploration of the map
     val horizon = Point2D(1000,meanYLevel)
 
+    val victimRescuer: Option[ID] = mux(VICTIM){
+      rep[Option[ID]](None)(rescuer => {
+        val rescuers: Set[ID] = excludingSelf.unionHoodSet(nbr(if(EXPLORER && !UNAVAILABLE) Set(mid()) else Set.empty))
+        rescuer.filter(r => rescuers.contains(r)).orElse(rescuers.headOption)
+      })
+    } { None }
+
     branch(!UNAVAILABLE) {
-      val victimFound = minHood(nbrRange() * nbr(if(VICTIM) 1 else Double.PositiveInfinity)) < Constants.VICTIM_RANGE && EXPLORER
+      def distanceToVictim = {
+        val d = nbrRange() * nbr(if(VICTIM) 1 else Double.PositiveInfinity) * (if(EXPLORER) 1 else Double.PositiveInfinity)
+        if(nbr(VICTIM & victimRescuer.isEmpty)) Constants.VICTIM_RANGE else d
+      }
+      val victimFound = minHood(distanceToVictim) < Constants.VICTIM_RANGE && EXPLORER
       node.put(Exports.VICTIM_FOUND, victimFound)
 
-      val target: Point2D = excludingSelf.minHoodSelector(toMinimize = nbrRange() * nbr(if(VICTIM) 1 else Double.PositiveInfinity))(data =
-        (nbrRange() * nbr(if(VICTIM) 1 else Double.PositiveInfinity), currentPosition() + nbrVector())) // nearest victim
-        .filter(tp => !tp._1.isInfinite && tp._1 < 75 /* if victim not enough close, continue exploration */)
+      val target = excludingSelf.minHoodSelector(toMinimize = distanceToVictim)(data = (distanceToVictim, currentPosition() + nbrVector(), nbr(mid()))) // nearest victim
+        .filter(tp => !tp._1.isInfinite && tp._1 < Constants.VICTIM_SCOPE /* if victim not enough close, continue exploration */)
         .map(_._2).getOrElse(horizon) // or an horizon point
       node.put("target_point", target)
 
@@ -108,7 +118,7 @@ class SpatialCoordination extends AggregateProgram with StandardSensors with Cus
       if(node.has(Molecules.BREADCRUMB)) node.remove(Molecules.BREADCRUMB)
       breadcrumbLogs.flatMap(_._2).map(_.op match {
         case OutHere(_, by, pos, _) => (by,pos)
-      }).minByOption(tp => tp._2.distance(currentPosition())).foreach(tp => node.put(Molecules.BREADCRUMB, tp._1 % teamSize))
+      }).minByOption(tp => tp._2.distance(currentPosition())).foreach(tp => if(NODE) node.put(Molecules.BREADCRUMB, tp._1 % teamSize))
 
       // One process participates to all processes for close breadcrumbs
       val breadcrumbsToSpawn = breadcrumbLogs.flatMap(_._2).filter(toid => toid.op match {
@@ -154,7 +164,7 @@ class SpatialCoordination extends AggregateProgram with StandardSensors with Cus
     }{ /* unavailable devices do not do anything */ }
 
     def skipAndFollowLogic(eventualTarget: Point2D): Point2D = {
-      println(s"[${mid()}]")
+      // println(s"[${mid()}]")
       val up = false // nextRandom() > 0.5
       val p = currentPosition()
       rep[(Point2D,Point2D,Boolean)]((p,p,up)){ case (startingPos, _, initiallyUp) => {
@@ -257,6 +267,7 @@ object SpatialCoordination {
     val INITIATOR = "initiator"
   }
   object Constants {
+    val VICTIM_SCOPE = 75
     val AVOID_BY_Y = 60
     val AVOID_BY_X = 100
     val BREADCRUMB_EXTENSION: Double = 100
