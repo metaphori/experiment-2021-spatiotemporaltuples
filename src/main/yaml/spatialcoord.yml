@@ -140,6 +140,14 @@ displacements:
         concentration: *opTimeout
       - molecule: failureProb
         concentration: *failureProb
+      - molecule: lifetime
+        concentration: 0.0
+      - molecule: doing_in
+        concentration: false
+      - molecule: doing_out
+        concentration: false
+      - molecule: doing_in_and_out
+        concentration: false
   # TACTICAL NETWORK
   - in:
       type: Grid #GeometricGradientRectangle
@@ -188,6 +196,14 @@ displacements:
         concentration: *opTimeout
       - molecule: failureProb
         concentration: *failureProb
+      - molecule: lifetime
+        concentration: 0.0
+      - molecule: doing_in
+        concentration: false
+      - molecule: doing_out
+        concentration: false
+      - molecule: doing_in_and_out
+        concentration: false
   # VICTIMS
   - in:
       type: SpecificPositions
@@ -234,6 +250,14 @@ displacements:
         concentration: *opTimeout
       - molecule: failureProb
         concentration: *failureProb
+      - molecule: lifetime
+        concentration: 0.0
+      - molecule: doing_in
+        concentration: false
+      - molecule: doing_out
+        concentration: false
+      - molecule: doing_in_and_out
+        concentration: false
   # OBSTACLES
   - in:
       type: SpecificPositions
@@ -279,3 +303,11 @@ displacements:
         concentration: *opTimeout
       - molecule: failureProb
         concentration: *failureProb
+      - molecule: lifetime
+        concentration: 0.0
+      - molecule: doing_in
+        concentration: false
+      - molecule: doing_out
+        concentration: false
+      - molecule: doing_in_and_out
+        concentration: false
