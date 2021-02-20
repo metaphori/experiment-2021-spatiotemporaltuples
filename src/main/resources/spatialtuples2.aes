@@ -72,7 +72,7 @@
     "blue": {
       "max": 255,
       "min": 0,
-      "val": 0
+      "val": 255
     },
     "green": {
       "max": 255,
@@ -92,7 +92,7 @@
     "size": {
       "max": 100,
       "min": 0,
-      "val": 8
+      "val": 31
     },
     "molFilter": true,
     "molString": "leader_in_proc",
@@ -100,24 +100,24 @@
     "property": "",
     "writingPropertyValue": false,
     "c": "HUE",
-    "reverse": false,
+    "reverse": true,
     "propoom": {
-      "max": 10,
-      "min": -10,
-      "val": 2
-    },
-    "minprop": {
       "max": 10,
       "min": -10,
       "val": 0
     },
+    "minprop": {
+      "max": 10,
+      "min": -10,
+      "val": -1
+    },
     "maxprop": {
       "max": 10,
       "min": -10,
-      "val": 3
+      "val": 6
     },
     "colorCache": {
-      "value": -65536,
+      "value": -65281,
       "falpha": 0.0
     }
   },
@@ -128,7 +128,7 @@
     "red": {
       "max": 255,
       "min": 0,
-      "val": 0
+      "val": 255
     },
     "blue": {
       "max": 255,
@@ -138,12 +138,12 @@
     "green": {
       "max": 255,
       "min": 0,
-      "val": 255
+      "val": 0
     },
     "alpha": {
       "max": 255,
       "min": 0,
-      "val": 85
+      "val": 255
     },
     "scaleFactor": {
       "max": 100,
@@ -153,7 +153,7 @@
     "size": {
       "max": 100,
       "min": 0,
-      "val": 25
+      "val": 16
     },
     "molFilter": true,
     "molString": "leader_out_proc",
@@ -165,20 +165,20 @@
     "propoom": {
       "max": 10,
       "min": -10,
-      "val": 2
+      "val": 0
     },
     "minprop": {
       "max": 10,
       "min": -10,
-      "val": 0
+      "val": -3
     },
     "maxprop": {
       "max": 10,
       "min": -10,
-      "val": 6
+      "val": 7
     },
     "colorCache": {
-      "value": 1426128640,
+      "value": -65536,
       "falpha": 0.0
     }
   },
@@ -189,7 +189,7 @@
     "red": {
       "max": 255,
       "min": 0,
-      "val": 255
+      "val": 0
     },
     "blue": {
       "max": 255,
@@ -214,7 +214,7 @@
     "size": {
       "max": 100,
       "min": 0,
-      "val": 18
+      "val": 28
     },
     "molFilter": true,
     "molString": "initiator",
@@ -239,7 +239,7 @@
       "val": 1
     },
     "colorCache": {
-      "value": -65536,
+      "value": -16777216,
       "falpha": 0.0
     }
   }

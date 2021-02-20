@@ -49,7 +49,7 @@ class SpatialTuplesStorm extends AggregateProgram with StandardSensors with Cust
 
     val pids: Set[TupleOpId] = stormScenaro() //basicScenario()
     // Spawn processes and get results
-    rep(Map[TupleOpId,TupleOpResult]())(ops =>
+    val procs = rep(Map[TupleOpId,TupleOpResult]())(ops =>
       sspawn[TupleOpId,Map[TupleOpId,TupleOpResult],TupleOpResult](tupleOperation _, pids, ops)
     )
 
@@ -63,6 +63,10 @@ class SpatialTuplesStorm extends AggregateProgram with StandardSensors with Cust
     node.put(Exports.NUM_OUTS_TIMEOUT, node.getOrElse[Set[TupleOpId]](Molecules.OUTS_TIMEOUT, Set.empty).size)
     node.put(Exports.NUM_INS_TIMEOUT, node.getOrElse[Set[TupleOpId]](Molecules.INS_TIMEOUT, Set.empty).size)
     node.put(Exports.DOING_IN_AND_OUT, node.getOrElse(Effects.DOING_IN, false) && node.getOrElse(Effects.DOING_OUT, false))
+    node.put(Effects.LEADER_OUT_PROC, node.getOption[Int](Effects.LEADER_OUT_PROC).map(i => i % 20).getOrElse(-1))
+    node.put(Effects.LEADER_IN_PROC, node.getOption[Int](Effects.LEADER_IN_PROC).map(i => i % 20).getOrElse(-1))
+
+    procs
   }
 
   /**

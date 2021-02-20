@@ -75,7 +75,7 @@ trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC
   }
 
   def handleRemovalByIN(toid: TupleOpId, s: Tuple, potential: Double, arg: ProcArg): (Set[TupleOpEvent], Boolean) = {
-    node.put(Effects.LEADER_OUT_PROC, Math.max(node.getOrElse(Effects.LEADER_OUT_PROC, -1), toid.op.initiator))
+    node.put(Effects.LEADER_OUT_PROC, choosePidToShow(node.getOrElse(Effects.LEADER_OUT_PROC, -1), toid.op.initiator))
     val owner = mid() == toid.op.initiator
     if(owner){ node.put(Effects.INITIATOR, true) }
     val events = arg.flatMap(_._2.events).toSet
@@ -146,7 +146,7 @@ trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC
   def InLogic(toid: TupleOpId, inOp: In, arg: ProcArg): (TupleOpResult, Status) = {
     node.put(Effects.DOING_IN, true)
     if(toid.op.initiator == mid()){ node.put(Effects.INITIATOR, true) }
-    node.put(Effects.LEADER_IN_PROC, Math.max(node.getOrElse(Effects.LEADER_IN_PROC, -1), toid.op.initiator))
+    node.put(Effects.LEADER_IN_PROC, choosePidToShow(node.getOrElse(Effects.LEADER_IN_PROC, -1), toid.op.initiator))
     if(toid.op.initiator == mid()){ inc(Exports.NUM_IN_INITIATORS) }
     val In(ttemplate, initiator, extension) = inOp
     val owner = mid()==initiator
@@ -239,6 +239,10 @@ trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC
     events.collectFirst {
       case OUTAck(`outP`) => true
     }.isDefined
+
+  private def choosePidToShow(a: ID, b: ID): ID = {
+    if(Math.abs(a-mid()) < Math.abs(b-mid())) a else b
+  }
 }
 
 object SpatialTuplesSupport {

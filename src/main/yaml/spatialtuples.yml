@@ -60,7 +60,7 @@ variables:
     formula: 2.0 # move once every 2.0 seconds
   speed: &speed
     min: 0.0
-    max: 12.0
+    max: 22.0
     step: 10.0
     default: 10.0
   failureProb: &failureProb
@@ -76,11 +76,11 @@ variables:
     default: 2.0
   timeDistrib: &timeDistrib
     type: ArbitraryVariable
-    parameters: [0, [0,1,2]]
+    parameters: [2, [0,1,2]]
   timeDistribClass: &timeDistribClass
-    formula: if(timeDistrib==2) "WeibullDistribution" else if(timeDistrib==1) "ExponentialTime" else "DiracComb"
+    formula: if(timeDistrib==2) "WeibullDistributedWeibullTime" else if(timeDistrib==1) "ExponentialTime" else "DiracComb"
   timeDistribParams: &timeDistribParams
-    formula: if(timeDistrib==2) [1.0, 0.01] else if(timeDistrib==1) [1.0] else [1.0]
+    formula: if(timeDistrib==2) [1.0, 0.05, 0.05] else if(timeDistrib==1) [1.0] else [1.0]
 
 layers:
   - type: it.unibo.alchemist.model.implementations.layers.UniformLayer

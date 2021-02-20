@@ -145,7 +145,7 @@ def merge_samples(contents, configs):
 def plot(config,content,nf,pformat):
   title = map("=".join,config)
   if doWrap is not None: title = wrap("    ".join(title), 30)
-  title = "\n".join([s.strip() for k,s in enumerate(title) if k not in excluded_titles])
+  title = "\n".join([s.strip() for k,s in enumerate(title) if k not in excluded_titles[nf]])
   parts_suffix = "_".join(map("-".join,config))
 
   plt.figure() # (figsize=(10,10), dpi=80)
@@ -282,7 +282,7 @@ with open(plotconfig, 'r') as stream:
         #sampling = pc.get('sampling', False)
         sampling = parse_sim_option(pc, 'sampling')
         sampling_dim = parse_sim_option(pc, 'samplingField', 'random')
-        excluded_titles = pc.get('excluded_titles',[])
+        excluded_titles = parse_sim_option(pc, 'excluded_titles')
         title_prefix = parse_sim_option(pc, 'title_prefix', '')
         doWrap = pc.get('do_wrap')
         plt.rcParams.update({'font.size': pc.get('font_size', 14)})

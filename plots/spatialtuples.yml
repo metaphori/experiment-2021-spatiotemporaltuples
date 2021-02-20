@@ -26,9 +26,8 @@ the_plots_labels:
 the_plots_formats:
   - [0,1,2,3,4] #,9,10] #- [0,1,2,3,4,7,8,6,9,10]
   - [0,11,12,14,15] # [0,11,12,13,14,15,16]
-  - [0,19]
   - [0,20,21,22]
-  - [0,9,10] # timeouts
+  - [0,9,10,19] # timeouts + lifetime-max
 #  - [0,1,2,3,4,7,8,6,9,10]
 #y_labels: ['# of requests', '# of requests','','% of utilization of workers']
 #file_suffixes:
@@ -78,4 +77,6 @@ sampling:
 format: 'pdf'
 
 #title_prefix: ''
-#excluded_titles: [0]
+
+excluded_titles:
+  0: [] # [1]
