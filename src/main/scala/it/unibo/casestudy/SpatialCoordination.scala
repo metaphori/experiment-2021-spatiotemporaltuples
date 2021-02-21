@@ -276,6 +276,6 @@ object SpatialCoordination {
     val CRITICAL_VICINITY_OBSTACLE = 20.0
     val EXT_PID_DIFFUSION = 150 // the extension of space that PIDs must be propagated to support spatial situation
     val MAX_X = 900
-    val T_SECOND_EXPLORERS_DEPARTURE = 50
+    val T_SECOND_EXPLORERS_DEPARTURE = 120
   }
 }
