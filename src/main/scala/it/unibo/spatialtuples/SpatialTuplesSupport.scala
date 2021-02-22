@@ -104,7 +104,7 @@ trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC
           val ack = gossipBy[Boolean](inOwnerAck(toid, inProc, events), _ || _)
           // Close when ack reaches the OUT owner
           val ackEvent: Set[TupleOpEvent] = if(owner && ack) Set(OUTAck(toid)) else Set.empty
-          (branch[OutPhase](owner && ack){ delay(OutPhase.Done, thisPhase) } {
+          (branch[OutPhase](owner && ack){ delay(OutPhase.Done, thisPhase, 2) } {
             // If the IN is not alive anymore, back to normal phase
             branch[OutPhase](owner && !notAliveIN){ thisPhase }{ OutPhase.Normal }
           }, Set(OUTReservedFor(toid, inProc))++ackEvent)
@@ -173,15 +173,15 @@ trait SpatialTuplesSupport extends ScafiAlchemistSupport with BlockG with BlockC
             Set(INLookingFor(toid, ttemplate)) // Advertise with an event this IN process wants a tuple matching ttemplate
           )
         }
-        case InPhase.Read(out) => {
+        case thisPhase@InPhase.Read(out) => {
           // Just let the owner read the tuple
           if(trueOnFirstExecutionOnly() && owner){ addTupleIfNotAlreadyThere(out.outTuple) }
           // Advertise the tuple that has been removed to everyone in the IN process
           val event = INRemovedTuple(toid, out)
           // Wait ack from OUT to actually close
-          val ack = C[Double, Boolean](g, _||_, keepUntil[Boolean](outOwnerAck(out, events), until = v => !v), false)
+          val ack = gossipBy[Boolean](outOwnerAck(out, events), _ || _)
           // Close when ack reaches the IN owner
-          (if(owner && ack){ InPhase.Done(out) } else { InPhase.Read(out) }, Set(event))
+          (branch[InPhase](owner && ack){ delay(InPhase.Done(out), thisPhase, 2) } { InPhase.Read(out) }, Set(event))
         }
         case InPhase.Done(out) => {
           (InPhase.Done(out), Set(INDone(toid)))

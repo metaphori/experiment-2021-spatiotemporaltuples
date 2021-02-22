@@ -74,10 +74,10 @@ variables:
     #max: 10.0
     #step: 4.0
     #default: 2.0
-    formula: if(timeDistrib==2) 2.0 else if(timeDistrib==1) 5.0 else 1.2
+    formula: if(timeDistrib==2) 2.0 else if(timeDistrib==1) 5.0 else 2.0
   timeDistrib: &timeDistrib
     type: ArbitraryVariable
-    parameters: [2, [0,1,2]]
+    parameters: [0, [0,1,2]]
   timeDistribClass: &timeDistribClass
     formula: if(timeDistrib==2) "WeibullDistributedWeibullTime" else if(timeDistrib==1) "ExponentialTime" else "DiracComb"
   timeDistribParams: &timeDistribParams
