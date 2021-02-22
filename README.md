@@ -1,126 +1,122 @@
-# Learning simulations with ScaFi-Alchemist
+# Spatiotemporal Tuples - Simulations
 
-* [ScaFi](https://scafi.github.io) is an aggregate programming framework
-* [Alchemist](https://alchemistsimulator.github.io) is a flexible (meta-)simulator for multi-agent systems
+Repository with source code, experimental framework, and tools for Spatiotemporal Tuples,
+ a model covered in a paper submitted to COORDINATION 2021.
 
-## Alchemist
+For any issues with reproducing the experiments, please contact [Roberto Casadei](https://robertocasadei.github.io)
+ e.g. [via e-mail](mailto:roby.casadei@unibo.it).
 
-### Conceptual model
+## Overview
 
-- **Molecule**: name of a data item
-- **Concentration**: value associated to a particular molecule
-- **Node**: a container of molecules/reactions, living inside an environment
-- **Environment**: the Alchemist abstration for the space.
-    - It is a container for nodes, and it is able to tell:
-  a) Where the nodes are in the space - i.e. their position
-  b) How distant are two nodes
-  c) Optionally, it may provide support for moving nodes
-- **Linking rule**: a function of the current status of the environment that associates to each node a
-  neighborhood
-    - **Neighborhood**: an entity composed by a node (centre) + a set of nodes (neighbors)
-- **Reaction**: any event that can change (through an **action**) the state of the environment
-    - Consists of 0+ **conditions**, 1+ **actions**, and a **time distribution**
-    - Conditions, time distribution, static rate, and rate equation affect the **frequency** of the reaction
-- Alchemist implements an optimised version (NRM) of Gillespie's Stochastic Simulation Algorithm (SSA)
+This repository contains the following
 
-So
+1. An implementation of the Spatiotemporal Tuples model, in ScaFi
+2. Simulation infrastructure (Alchemist-ScaFi) for assessing the implementation
+3. Scripts and tools for running simulations
 
-- The **system state** depends on the configuration of molecules floating in it
-- The **system evolution** depends on the kinds of chemical reactions applicable over time
+The following tools are used:
 
-Another key concept is the **dependency graph**
+* [ScaFi](https://scafi.github.io): an aggregate programming framework
+* [Alchemist](https://alchemistsimulator.github.io): a flexible (meta-)simulator for multi-agent systems
+* Java 11: the platform upon which ScaFi and Alchemist run
+* git: version control system for keeping track of this repository
+* Gradle: build system automating compilation and execution of the application
+* Python: for generating plots from data produced by sampling the simulations
 
-- Actions are outputs
-- Conditions are inputs
+## Getting started
 
-### Running simulations
+### 1. Importing the repository
 
-Use task configured in `build.gradle.kts`:
+The first step is cloning this repository. It can be easily done by using git. Open a terminal, move it into an empty folder of your choice, then issue the following command:
 
 ```bash
-$ ./gradlew hello
+# HTTPS
+git clone https://github.com/metaphori/experiment-2021-spatiotemporaltuples.git
+# SSH
+git clone git@github.com:metaphori/experiment-2021-spatiotemporaltuples.git
+# Change directory to the repository
+cd experiment-2021-spatiotemporaltuples
 ```
 
-Basically, all you need to do to launch a simulation (batch) is running `it.unibo.alchemist.Alchemist`
- with your simulation's descriptor. So, another approach is the following:
+### 2. Smoke test
+
+This should make all the required files appear in your repository, with the latest version.
+
+To check if everything works as expect, run the following command to start a GUI-based simulation (it may take some time to bootstrap):
+
+```
+./gradlew st
+```
+
+Once the GUI shows up, press `P` to start the simulation.
+
+### 3. Open the project with an IDE
+
+- **Eclipse**: open Eclipse, click on "File > Import" and then on "Gradle > Existing Gradle Project", then select the folder of the repository donwloaded in the previous step.
+- **IntelliJ Idea**: similarly
+
+## Project layout
+
+The main files and directories of the project are the following:
+
+- `build.gradle.kts`: the project build file; specifies dependencies and tasks
+- `src/main/yaml/`: contains declarative simulation descriptors as YAML files
+- `src/main/scala/`: contains implementation code
+
+### Main source files
+
+- `src/main/scala/it/unibo/spatialtuples/SpatialTuplesSupport.scala`: contains the implementation of the tuple operations as ScaFi aggregate processes
+- `src/main/scala/it/unibo/experiments/SpatialTuplesStorm.scala`: contains the program played by the nodes in the correctness simulation described
+  by file `src/main/yaml/spatialtuples.yaml`
+- `src/main/scala/it/unibo/casestudy/SpatialCoordination.scala`: contains the program played by the nodes in the rescue case study
+ described by file `src/main/yaml/spatialcoord.yaml`
+
+## Simulations about correctness
+
+Type
 
 ```bash
-./gradlew fatJar # or shadowJar
-
-java -Xmx2524m -cp "build/libs/<MYFATJAR>.jar" \
-  it.unibo.alchemist.Alchemist \
-  -b -var random \
-  -y <path-to-yaml> -e data/20191004-test \
-  -t 100 -p 1 -v &> exec.txt &
+./gradlew moving
 ```
 
-You can also use some IDE (such as Eclipse or IntelliJ Idea).
-In IntelliJ, you can create a run configuration of type `Application`
-that looks like the following.
+for running the batch of experiments (NOTE: it requires a lot of resources and might take a lot of time).
+Data produced by the simulator will be writted to directory data/raw/ (the output is one CSV file per simulation run).
 
-![](assets/imgs/intellij-run-configuration.png)
+Key files
 
-You basically have to pass arguments to the Java program that 
- leverages main class `it.unibo.alchemist.Alchemist`.
-Your project must be properly imported and synchronised via Gradle;
- the Scala SDK must be properly set up, as well as the JDK Runtime.
-If everything works ok, you should be able to see the following simulation,
-which shows a gradient computation on a simulated network situated in the map of Vienna.
+- `src/main/scala/it/unibo/experiments/SpatialTuplesStorm.scala`: contains the program played by the nodes in the correctness simulation described
+  by file `src/main/yaml/spatialtuples.yaml`
 
-![](assets/imgs/gradient-vienna.png)
+To process data and generate plots, issue
 
-### Scafi
-
-The simulation descriptor must indicate `incarnation: scafi`
- and configure a `RunScafiProgram` action
- pointing to the class of some class implementing `AggregateProgram`.
-
-```yaml
-incarnation: scafi
-
-pools:
-  - pool: &program
-    - time-distribution:
-        type: ExponentialTime
-        parameters: [1]
-      type: Event
-      actions:
-        - type: RunScafiProgram
-          parameters: [it.unibo.casestudy.HelloWorld, 5.0] # second argument is retention time
-    - program: send
-```
-An example ScaFi program is the following
-
-```scala
-package it.unibo.casestudy
-
-import it.unibo.alchemist.model.implementations.molecules.SimpleMolecule
-import it.unibo.alchemist.model.scafi.ScafiIncarnationForAlchemist._
-
-class HelloWorld extends AggregateProgram with StandardSensors with ScafiAlchemistSupport
-  with Gradients {
-  override def main(): Any = {
-    // Access to node state through "molecule"
-    val x = if(node.has("prova")) node.get[Int]("prova") else 1
-    // An aggregate operation
-    val g = classicGradient(mid==100)
-    // Write access to node state
-    node.put("g", g)
-    // Return value of the program
-    g
-  }
-}
+```bash
+./plotter.py plots/spatialtuples.yml data/ .* somename
 ```
 
-## On this version and past versions
+### High-resolution plots
 
-I will try to keep this repository aligned with the latest versions of scafi and Alchemist.
+- [Plot 1](assets/imgs/mov_0_speed-10.pdf)
+- [Plot 2](assets/imgs/mov_1_speed-10.pdf)
 
-However, I have also set up different branches to "freeze" particular project configurations that have proven to work.
-These can be checked out through the usual git branch mechanism, e.g.:
+## Rescue case study
 
-`git checkout scafi-0.3.2-alchemist-9.2.1`
+Type
 
-Available branches/configurations:
+```bash
+./gradlew casestudy
+```
 
-- `scafi-0.3.2-alchemist-9.2.1`
+to run the graphical simulation of the rescue case study.
+
+Key files
+
+- `src/main/scala/it/unibo/casestudy/SpatialCoordination.scala`: contains the program played by the nodes in the rescue case study
+ described by file `src/main/yaml/spatialcoord.yaml`
+
+### Simulation phases
+
+![](assets/imgs/rescue-scenario-1.png)
+
+![](assets/imgs/rescue-scenario-2.png)
+
+![](assets/imgs/rescue-scenario-3.png)

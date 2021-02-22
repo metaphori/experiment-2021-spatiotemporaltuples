@@ -196,4 +196,6 @@ makeTest(name="mobility", file = "spatialtuples", time = 1000.0, vars = setOf("s
 
 makeTest(name="exp", file = "spatialtuples", time = 1000.0, vars = setOf("speed","timeDistrib","random"), taskSize = 1200)
 
+makeTest(name="casestudy", file = "spatialcoord", taskSize = 1500, effects="src/main/resources/spatialcoord.aes")
+
 // defaultTasks("fatJar")

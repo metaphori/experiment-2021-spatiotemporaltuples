@@ -220,7 +220,7 @@ title_prefix = ""
 ###################################################################################
 
 script = sys.argv[0]
-if len(sys.argv)<3:
+if len(sys.argv)<5:
   print("USAGE: plotter2 <plotConfig> <basedir> <fileregex> <basefn>")
   exit(0)
 
@@ -228,7 +228,7 @@ plotconfig = sys.argv[1]
 basedir = sys.argv[2]
 fileregex = sys.argv[3]
 basefn = sys.argv[4]
-outdir = os.path.join(basedir, "imgs/")
+outdir = os.path.join(sys.argv[5],'') if len(sys.argv)>=6 else os.path.join(basedir, "imgs/")
 if not os.path.exists(outdir):
   os.makedirs(outdir)
   
