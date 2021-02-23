@@ -1,4 +1,4 @@
-# Spatiotemporal Tuples - Simulations
+# Tuple-based Coordination in Large-Scale Situated Systems
 
 Repository with source code, experimental framework, and tools for Spatiotemporal Tuples,
  a model covered in a paper submitted to COORDINATION 2021.
